@@ -32,6 +32,7 @@
 | §7 步骤 7 | 扰动测试（N/未击杀/治疗缺失/插队） | `src/analyzer/robustness.py` | `tests/test_robustness.py` |
 | §7 步骤 8 | 版本数据管理：不同版本/模式/祝福/敌方机制的 A 矩阵库 | `src/matrix/library.py` `MatrixLibrary`/`MatrixVariant` + `load_matrix_library`（`source`/`family_key`/`perturbation` 引用,可再生）；CLI `--library`；演示 `examples/theory_document/version_matrix_library.json` | `tests/test_matrix_library.py` |
 | §8 | 断轴究竟是资源问题还是时序问题 | `src/analyzer/cycle_detector.py` `CycleDetector`（资源/触发/时序三类断轴分类,消费两个引擎的结果） | `tests/test_cycle_detector.py` |
+| §8+模拟层 | 队伍搜索:组合×排轴枚举,按稳定性排序（持续>循环数>断轴类别>终结技数） | `src/analyzer/team_search.py` `TeamSearch`/`rotation_variants`；CLI `--search`；演示 `examples/team_search_demo.json` | `tests/test_team_search.py` |
 | 全流程 | 一键汇总报告 | `src/analyzer/report.py` `Report`（谱半径+Perron+瓶颈+断轴分类）；CLI `--report` | `tests/test_report.py` |
 | §8 | 哪条边决定成败 | `TransferMatrix.edge_sensitivity`；N=2 单边缺失即翻转 regime 的审计演示 | `test_edge_sensitivity_*`、`tests/test_audit_demo.py` |
 | §1.1（模拟层） | AV=10000/速度、插入行动不消耗通常回合 | `src/simulation/speed_engine.py` `SpeedBattleEngine` | `tests/test_speed_engine.py` |

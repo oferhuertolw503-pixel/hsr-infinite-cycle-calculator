@@ -15,6 +15,7 @@ approximation, never as a proof of a practical infinite loop.
 """
 
 import argparse
+import json
 import sys
 
 from .analyzer.audit import CycleAudit
@@ -22,6 +23,7 @@ from .analyzer.bottleneck import BottleneckAnalyzer
 from .analyzer.cycle_detector import CycleDetector
 from .analyzer.optimizer import CycleRepairPlanner, critical_parameter
 from .analyzer.report import Report
+from .analyzer.team_search import TeamSearch
 from .data_loader.character_loader import load_character_validated
 from .data_loader.matrix_loader import (
     load_example_json,
@@ -278,6 +280,71 @@ def _print_team(path):
     return {"result": result, "cycle": cycle}
 
 
+def _print_search(path, team_size=None, max_rounds=None, top=10):
+    data = load_example_json(path)
+    character_paths = data.get("characters") or data.get("team")
+    if not character_paths:
+        raise ValueError(f"{path} needs a 'characters' (or legacy 'team') list")
+    pool = [load_character_validated(p) for p in character_paths]
+    search_config = data.get("search", {})
+    team_size = team_size if team_size is not None else search_config.get("team_size")
+    if max_rounds is None:
+        max_rounds = search_config.get(
+            "max_rounds", data.get("simulation", {}).get("turns", 200)
+        )
+    sim = data.get("simulation", {})
+
+    searcher = TeamSearch(
+        pool,
+        enemy_speed=float(data.get("enemy_speed", 132.0)),
+        team_size=team_size,
+        max_rounds=int(max_rounds),
+        initial_energy=float(sim.get("initial_energy", 0.0)),
+        initial_sp=float(sim.get("initial_skill_points", 3.0)),
+    )
+    result = searcher.search()
+
+    print("=" * 60)
+    print("HSR 永动机队伍搜索 (模拟器层:组合 x 优先级枚举)")
+    print("=" * 60)
+    print("角色池:", ", ".join(
+        d.get("name", d.get("id")) for d in pool))
+    print(f"队伍规模: {searcher.team_size}  敌方速度: {searcher.enemy_speed:g}"
+          f"  轮数预算: {searcher.max_rounds}")
+    print(f"枚举候选: {result['searched']}")
+
+    print(f"\n稳定性排行 Top{min(top, len(result['rows']))} "
+          "(持续 > 循环数 > §8 断轴类别 > 终结技数):")
+    header = (f"  {'#':>2s}  {'队伍':<30s}  {'循环':>4s}  "
+              f"{'断轴':>8s}  {'终结技':>4s}  排轴")
+    print(header)
+    for rank, row in enumerate(result["rows"][:top], start=1):
+        rotation = _format_rotation(row["overrides"])
+        print(f"  {rank:>2d}  {'+'.join(row['roster']):<30s}  "
+              f"{row['cycles_completed']:>4d}  "
+              f"{row['break_class']:>8s}  {row['total_ults']:>4d}  "
+              f"{rotation}")
+
+    best = result["best"]
+    if best is not None:
+        print("\n最优排轴 (可粘贴进队伍文件 priority_overrides):")
+        print(json.dumps(best["overrides"], ensure_ascii=False, indent=2))
+    print("\n" + result["note"])
+    return result
+
+
+def _format_rotation(overrides):
+    """Compact 'unit: a>b(crossed)' rotation summary for the table."""
+    parts = []
+    for unit, actions in overrides.items():
+        enabled = sorted(
+            (spec["priority"], name) for name, spec in actions.items()
+            if spec.get("enabled", True)
+        )
+        parts.append(f"{unit}: " + ">".join(name for _, name in enabled))
+    return "; ".join(parts)
+
+
 def run_cli(argv=None):
     parser = argparse.ArgumentParser(
         prog="hsr-infinite-cycle-calculator",
@@ -298,6 +365,12 @@ def run_cli(argv=None):
                         help="输出完整报告:谱半径+Perron+瓶颈敏感性+时序断轴分类")
     parser.add_argument("--team", action="store_true",
                         help="按队伍 JSON 运行速度引擎(角色数据+优先级编辑+断轴分类)")
+    parser.add_argument("--search", action="store_true",
+                        help="按角色池 JSON 枚举队伍组合与优先级,按稳定性排序给出最优排轴")
+    parser.add_argument("--team-size", type=int, default=None,
+                        help="--search 的队伍规模(默认:池内全部角色)")
+    parser.add_argument("--max-rounds", type=int, default=None,
+                        help="--search 的轮数预算(默认:200 或文件内 search.max_rounds)")
     args = parser.parse_args(argv if argv is not None else sys.argv[1:])
 
     if args.family:
@@ -308,6 +381,9 @@ def run_cli(argv=None):
         return _print_report(args.example)
     if args.team:
         return _print_team(args.example)
+    if args.search:
+        return _print_search(args.example, team_size=args.team_size,
+                             max_rounds=args.max_rounds)
     return _print_single(args.example, audit=args.audit,
                          sensitivity=args.sensitivity, repair=args.repair)
 

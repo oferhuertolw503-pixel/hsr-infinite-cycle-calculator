@@ -1,0 +1,19 @@
+{
+  "name": "队伍搜索演示 (模拟器层)",
+  "characters": [
+    "data/characters/himeko.json",
+    "data/characters/march7th_hunt.json",
+    "data/characters/tribbie.json",
+    "data/characters/luocha.json"
+  ],
+  "enemy_speed": 50,
+  "search": {
+    "team_size": 2,
+    "max_rounds": 200
+  },
+  "simulation": {
+    "initial_energy": 0,
+    "initial_skill_points": 3
+  },
+  "notes": "在 4 人池中枚举 2 人组合与全部优先级排轴(含关闭耗点技能的省点变体),按'是否持续 > 完成循环数 > §8 断轴类别 > 终结技次数'排序。角色数值为演示量级,排序只对模型内部有效。"
+}

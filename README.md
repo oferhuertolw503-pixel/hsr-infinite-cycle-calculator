@@ -56,6 +56,7 @@ python main.py examples/theory_document/four_node_kill_real_family.json --family
 python main.py examples/theory_document/audit_workflow_demo.json --audit
 python main.py examples/theory_document/audit_workflow_demo.json --report
 python main.py examples/team_simulation_demo.json --team
+python main.py examples/team_search_demo.json --search
 ```
 
 `examples/theory_document/` 下的示例复现理论文档 §6 的谱半径数值
@@ -118,8 +119,10 @@ rho=1.02442 与文档 §4 的 α——且给出真实临界目标数：N=3 时 0
       注册表，`compare()` 给出 regime 一致性与外推警告，§7 步骤 8）
 - [x] 断轴分类与一键报告（`CycleDetector` 资源/触发/时序三类断轴，
       `Report` + `--report` 汇总，§8）
-
-模拟器层（后续）：基于 `SpeedBattleEngine` 的队伍搜索与稳定性最大化。
+- [x] 队伍搜索与稳定性最大化（模拟器层，`--search`：枚举角色组合 ×
+      优先级排轴（含关闭耗点技能的省点变体），按 是否持续 > 完成循环数 >
+      §8 断轴类别 > 终结技次数 排序，输出可直接粘贴进队伍文件的最优
+      `priority_overrides`）
 
 ## 目录结构
 
@@ -128,8 +131,9 @@ src/
   matrix/      转移矩阵引擎（transfer_matrix, perron, irreducibility,
                capped, family, library, validator, visualization）
   analyzer/    瓶颈敏感性（bottleneck）、修复规划与临界 N（optimizer）、
-               版本矩阵库对比（library+loader）、断轴分类（cycle_detector）、
-               一键报告（report）、八步审计（audit）、扰动测试（robustness）
+               队伍搜索（team_search）、版本矩阵库对比（library+loader）、
+               断轴分类（cycle_detector）、一键报告（report）、
+               八步审计（audit）、扰动测试（robustness）
   simulation/  离散时序引擎（timed_engine, speed_engine, priority）
   battle/      行动值/战斗状态（legacy 骨架）
   data_loader/ 角色与矩阵示例加载（含角色 schema 校验）
