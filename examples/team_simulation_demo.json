@@ -1,0 +1,15 @@
+{
+  "team": [
+    "data/characters/march7th_hunt.json"
+  ],
+  "simulation": {
+    "turns": 100,
+    "initial_energy": 0,
+    "initial_skill_points": 3
+  },
+  "analysis": {
+    "matrix": true,
+    "simulation": true,
+    "report": true
+  }
+}
