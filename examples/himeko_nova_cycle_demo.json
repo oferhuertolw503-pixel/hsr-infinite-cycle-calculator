@@ -1,0 +1,22 @@
+{
+  "name": "Himeko Nova ideal cycle demo",
+  "description": "Matrix based resource cycle example extracted from community analysis",
+  "nodes": [
+    "himeko_action",
+    "himeko_ultimate",
+    "jingyuan_action",
+    "general",
+    "jingyuan_ultimate"
+  ],
+  "matrix": [
+    [0,0.25,0,0,0.25],
+    [0.6,0.6,0,0.2,0],
+    [0,0,0,0,0.5],
+    [0.5,0.5,0.0833,0,0.333],
+    [0.15,0.2,0.25,0,0]
+  ],
+  "analysis": {
+    "method": "spectral_radius",
+    "notes": "rho(A)>1 indicates possible growth direction in linear model; practical simulation is required"
+  }
+}
