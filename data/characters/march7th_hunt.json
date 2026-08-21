@@ -1,0 +1,23 @@
+{
+  "id": "march7th_hunt",
+  "name": "March 7th (The Hunt)",
+  "path": "The Hunt",
+  "element": "Imaginary",
+  "events": {
+    "basic_attack": {
+      "energy_gain": 20,
+      "skill_points": 1
+    },
+    "enhanced_basic": {
+      "energy_gain": 30,
+      "skill_points": 0
+    },
+    "skill": {
+      "energy_gain": 30,
+      "skill_points": -1
+    },
+    "ultimate": {
+      "energy_cost": 120
+    }
+  }
+}
