@@ -165,6 +165,74 @@ def main():
         json.dumps(seven, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
+    # -- full audit workflow demo (theory section 7) ----------------------------
+    # Base: seven-node model at N=2 (rho ~ 1.00522, barely above critical).
+    # The loop is fragile: a missed kill (drop T_U self-energy) or a half
+    # heal flips the regime to decay, while raising N to 5 keeps it robust.
+    a2 = matrices["2"]
+    a5 = matrices["5"]
+    missed_kill = a2.copy()
+    missed_kill[6, 6] = 0.0            # 缇宝大招自充能缺失 -> 一次未击杀
+    half_heal = a2.copy()
+    half_heal[2, 1] *= 0.5             # C -> H_U 治疗/回流减半
+    audit_demo = {
+        "name": "七节点 N=2 复核审计演示 (§7 全流程)",
+        "source": "theory_document",
+        "section": "6, 7",
+        "nodes": SEVEN_NODES,
+        "matrix": round_matrix(a2),
+        "documented_rho": RHO_SEVEN_N2,
+        "tolerance": 2e-5,
+        "edge_meta": {
+            "6,3": {
+                "mechanism": "缇宝大招 -> 军功 M(随目标数 N 缩放)",
+                "cap": None,
+                "depends_on_N": True,
+            },
+            "6,6": {
+                "mechanism": "缇宝大招自充能(击杀回能)",
+                "cap": None,
+                "depends_on_N": True,
+            },
+        },
+        "sequence": [
+            {"name": "H", "energy_gain": 20.0, "av_cost": 10.0},
+            {"name": "C", "energy_gain": 20.0, "av_cost": 10.0},
+            {"name": "M", "energy_gain": 15.0, "av_cost": 10.0},
+            {"name": "T", "energy_gain": 20.0, "av_cost": 10.0},
+            {"name": "T_U", "energy_gain": 5.0, "av_cost": 0.0,
+             "no_advance": True},
+        ],
+        "enemy_av0": 10000.0,
+        "perturbations": [
+            {
+                "label": "target_count_N5",
+                "matrix": round_matrix(a5),
+                "note": "目标数提升到 5(§5.2):矩阵条目随 N 改变",
+            },
+            {
+                "label": "missed_kill_TU_self",
+                "matrix": round_matrix(missed_kill),
+                "note": "一次未击杀:缇宝大招自充能缺失",
+            },
+            {
+                "label": "half_heal_C_to_HU",
+                "matrix": round_matrix(half_heal),
+                "note": "治疗缺失:C -> H_U 回流减半",
+            },
+        ],
+        "mode_note": "该 A 适用于特定版本/模式/敌方配置,不可外推为通用结论。",
+        "notes": (
+            "§7 全流程审计示例:基矩阵为七节点 N=2(rho≈1.00522,略超临界),"
+            "扰动测试显示单边缺失即可翻转 regime(断轴是资源问题);"
+            "目标数提升到 N=5 后 rho≈1.04432,闭环更稳健。"
+            "条目为重构值,非截图原值。"
+        ),
+    }
+    (OUT_DIR / "audit_workflow_demo.json").write_text(
+        json.dumps(audit_demo, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
     print("wrote:", sorted(str(p) for p in OUT_DIR.glob("*.json")))
 
 

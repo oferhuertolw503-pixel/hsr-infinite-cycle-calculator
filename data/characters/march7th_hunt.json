@@ -3,6 +3,7 @@
   "name": "March 7th (The Hunt)",
   "path": "The Hunt",
   "element": "Imaginary",
+  "speed": 102,
   "events": {
     "basic_attack": {
       "energy_gain": 20,

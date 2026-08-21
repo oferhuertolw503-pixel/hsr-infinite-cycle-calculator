@@ -1,6 +1,7 @@
 {
   "name": "姬子",
   "path": "Erudition",
+  "speed": 96,
   "events": [
     {
       "name": "follow_up_attack",

@@ -68,6 +68,20 @@ def _print_single(path, audit=False):
             note = step.get("note") if isinstance(step, dict) else None
             if note:
                 print(f"[{key}] {note}")
+        perturbation = audit_result["steps"]["perturbation"]
+        if perturbation.get("cases"):
+            print("\n扰动用例结果(§7 步骤 7):")
+            base_rho = perturbation["base"]["rho"]
+            print(f"  基矩阵 rho={base_rho:.6g} regime={perturbation['base']['regime']}")
+            for row in perturbation["cases"]:
+                flip = "  <-- regime 翻转!" if row["regime_flipped"] else ""
+                print(f"  {row['label']:<24s} rho={row['rho']:.6g} "
+                      f"delta={row['delta_rho']:+.4f} regime={row['regime']}{flip}")
+        if audit_result["steps"]["timing"].get("stable") is not None:
+            timing = audit_result["steps"]["timing"]
+            print(f"\n时序模拟(§5.3/§5.4): stable={timing['stable']} "
+                  f"loops={timing['loops_completed']} "
+                  f"break={timing['break_reason']}")
         print("审计完整性: 全部步骤完成" if audit_result["all_done"] else
               "审计完整性: 部分步骤缺少数据(时序序列/扰动用例),需人工补齐")
     return result

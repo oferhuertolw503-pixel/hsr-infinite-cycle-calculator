@@ -49,6 +49,22 @@ def _coerce_perturbations(perturbations):
     return out
 
 
+def _coerce_edge_meta(edge_meta):
+    """Normalize edge metadata keys to (i, j) tuples.
+
+    Accepts tuple keys (from code) or "i,j" string keys (from JSON files).
+    """
+    if not edge_meta:
+        return {}
+    normalized = {}
+    for key, value in edge_meta.items():
+        if isinstance(key, str):
+            i, j = key.split(",")
+            key = (int(i), int(j))
+        normalized[key] = value
+    return normalized
+
+
 class CycleAudit:
     """Run the eight-step audit against one transfer matrix."""
 
@@ -60,7 +76,7 @@ class CycleAudit:
         self.units = list(units) if units is not None else ["count"] * n
         if len(self.units) != n:
             raise ValueError(f"got {len(self.units)} units for {n} nodes")
-        self.edge_meta = dict(edge_meta or {})
+        self.edge_meta = _coerce_edge_meta(edge_meta)
         self.sequence = _coerce_sequence(sequence)
         self.enemy_av0 = enemy_av0
         self.perturbations = _coerce_perturbations(perturbations) or []

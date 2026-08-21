@@ -22,12 +22,16 @@
 | §4 | Perron 向量 = 相对频率、瓶颈定位 | `perron_frequencies`（最小份额节点标记 `flagged_as_scarce`） | `test_perron_vector_normalized` |
 | §5.1 | 上限：`x_{t+1}=min(c, x_t A + b_t)` | `src/matrix/capped.py` `CappedTransferSystem` | `tests/test_capped.py` |
 | §5.2 | 阈值/目标数：`A=A(x_t,N,s_t)` | `src/matrix/family.py` `MatrixFamily`；N 进入 T_U 相关转移的七节点族 | `tests/test_theory_examples.py`、`test_family` 相关 |
-| §5.3 | 时序：`Executable(e_k)⟺x_k≥cost ∧ condition` | `src/simulation/timed_engine.py` `TimedBattleEngine` | `tests/test_timed_engine.py` |
-| §5.4 | 敌方时钟 `q_t`、插队/额外回合不推进 | `TimedBattleEngine`（`enemy_av`、`no_advance`） | `test_enemy_clock_*`、`test_inserted_actions_*` |
+| §5.3 | 时序：`Executable(e_k)⟺x_k≥cost ∧ condition` | `src/simulation/timed_engine.py` `TimedBattleEngine`；速度驱动引擎 `src/simulation/speed_engine.py` | `tests/test_timed_engine.py`、`tests/test_speed_engine.py` |
+| §5.4 | 敌方时钟 `q_t`、插队/额外回合不推进 | `TimedBattleEngine`（`enemy_av`、`no_advance`）；`SpeedBattleEngine` 的敌方行动值 | `test_enemy_clock_*`、`test_inserted_actions_*`、`tests/test_speed_engine.py` |
 | §6 | 案例数值：0.88353 / 1.02442 / 1.00522..1.04432 | `examples/theory_document/*.json`（重构演示矩阵） | `tests/test_theory_examples.py` |
-| §7 | 八步复核流程 | `src/analyzer/audit.py` `CycleAudit` | `tests/test_audit.py` |
+| §7 | 八步复核流程 | `src/analyzer/audit.py` `CycleAudit`；全流程示例 `examples/theory_document/audit_workflow_demo.json` | `tests/test_audit.py`、`tests/test_audit_demo.py` |
 | §7 步骤 7 | 扰动测试（N/未击杀/治疗缺失/插队） | `src/analyzer/robustness.py` | `tests/test_robustness.py` |
-| §8 | 哪条边决定成败 | `TransferMatrix.edge_sensitivity` | `test_edge_sensitivity_*` |
+| §8 | 哪条边决定成败 | `TransferMatrix.edge_sensitivity`；N=2 单边缺失即翻转 regime 的审计演示 | `test_edge_sensitivity_*`、`tests/test_audit_demo.py` |
+| §1.1（模拟层） | AV=10000/速度、插入行动不消耗通常回合 | `src/simulation/speed_engine.py` `SpeedBattleEngine` | `tests/test_speed_engine.py` |
+| §5.1（模拟层） | 能量/技能点封顶 | `SpeedBattleEngine`（`energy_cap`、`sp_cap`） | `test_energy_is_capped`、`test_skill_points_are_capped` |
+| §5.2（模拟层） | "能量满才开大"阈值 → 可执行动作集随状态改变 | `SpeedBattleEngine` 的大招阈值触发（插入动作） | `test_ultimate_fires_at_threshold_*` |
+| 可视化 | Phase 1 矩阵可视化 | `src/matrix/visualization.py`（heatmap / 有向图 / rho 曲线） | `tests/test_visualization.py`；示例图见 `docs/figures/` |
 
 ## 关键数值复现
 
@@ -43,7 +47,19 @@
 
 ## 重构示例的再生
 
-`python tools/generate_theory_examples.py` 可重新生成 `examples/theory_document/` 下的三个文件：
+`python tools/generate_theory_examples.py` 可重新生成 `examples/theory_document/` 下的四个文件：
 
 - 四节点矩阵用秩 1 构造 `A = rho·vvᵀ/(vᵀv)`，Perron 根恰为 `rho`、Perron 向量恰为文档 §4 的 α；
-- 七节点族以强连通基矩阵精确缩放到 `rho=1.00522`，再对 T_U 相关边（军功、自充能）做二分搜索，使 N=3..5 的谱半径命中目标值，体现 §5.2 的 N 依赖。
+- 七节点族以强连通基矩阵精确缩放到 `rho=1.00522`，再对 T_U 相关边（军功、自充能）做二分搜索，使 N=3..5 的谱半径命中目标值，体现 §5.2 的 N 依赖；
+- `audit_workflow_demo.json` 以 N=2 基矩阵（rho≈1.00522，略超临界）驱动 §7 全流程审计：扰动测试显示"去掉 T_U 自充能 → rho=0.9965 翻转为衰减"、"C→H_U 回流减半 → rho=0.9856 翻转为衰减"，而"N 升到 5 → rho=1.0443 仍稳健"——直观演示 §8"断轴究竟是资源问题还是时序问题"。
+
+## 战斗模拟（离散验证层）
+
+`SpeedBattleEngine`（`src/simulation/speed_engine.py`）把矩阵结论落到离散时序：
+
+- AV = 10000 / 速度（§1.1），行动值最小的单位先行动；
+- 能量/技能点封顶（§5.1）；"能量满才开大"作为状态阈值触发插入动作，且插入动作**不消耗通常回合**（§5.2/§1.1）；
+- 敌方行动值归零即插队打断闭环（§5.4），闭环须在敌方行动前完成；
+- 角色数据（`data/characters/*.json`，已含 `speed` 字段）经 `unit_from_character_data` 直接构建单位。
+
+示例图（`docs/figures/`）：`four_node_heatmap.png`、`four_node_digraph.png`、`seven_node_family_rho.png`。
