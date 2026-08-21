@@ -17,6 +17,8 @@
 - N 依赖矩阵族（§5.2，目标数进入矩阵条目）
 - 敌方时钟与可执行性时序模拟（§5.3/§5.4）
 - 八步复核流程审计（§7）与扰动测试
+- 瓶颈定位与敏感性分析（§4/§8：解析弹性 `d rho/d a_ij = u_i v_j`、脆弱边、潜在新边）
+- 循环修复规划（矩阵层"自动寻找循环组合"：最小单边干预达到 rho>=1、临界目标数 N）
 
 核心思想：
 
@@ -43,6 +45,7 @@ x_(t+1) = x_t A
 ```bash
 python main.py examples/himeko_nova_cycle_demo.json
 python main.py examples/theory_document/four_node_model_N5.json
+python main.py examples/theory_document/four_node_model_N5.json --sensitivity --repair
 python main.py examples/theory_document/four_node_kill_energy.json --audit
 python main.py examples/theory_document/seven_node_family.json --family
 python main.py examples/theory_document/audit_workflow_demo.json --audit
@@ -54,6 +57,11 @@ python main.py examples/theory_document/audit_workflow_demo.json --audit
 `audit_workflow_demo.json --audit` 跑通 §7 八步审计全流程：N=2 时去掉
 缇宝大招自充能或 C→H_U 回流减半，谱半径即翻转为衰减（rho<1）；目标数
 升到 N=5 后保持稳健——演示"哪条边决定成败"。
+`four_node_model_N5.json --sensitivity --repair` 演示 §4/§8 定位与修复：
+解析弹性 `d rho/d a_ij = u_i v_j` 与数值差分一致（误差 ~1e-8），
+B→B 是决定性边（弹性最大、也最脆弱）；最小修复为把 B→B 系数
+x1.26（增加 0.16）即达临界 rho=1。`--family` 输出附临界目标数 N
+（"目标数从哪里进入系统"，§8）。
 
 示例图（`docs/figures/`）：四节点转移矩阵热力图/有向图、七节点族 rho 曲线。
 
@@ -76,11 +84,13 @@ python main.py examples/theory_document/audit_workflow_demo.json --audit
 - [x] 敌方行动约束（行动值时钟，闭环须在敌方行动前完成）
 - [ ] 完整技能/光锥/命座数据表与优先级编辑器（游戏侧数据录入）
 
-### Phase 3: Optimization
+### Phase 3: Optimization（矩阵层）
 
-- [ ] 自动寻找循环组合
-- [ ] 参数敏感性分析
-- [ ] 版本数据管理
+- [x] 参数敏感性分析（`--sensitivity`：解析弹性 `d rho/d a_ij = u_i v_j`、
+      数值差分交叉验证、脆弱边/潜在新边排序；主导根非单实根时自动退化数值）
+- [x] 自动寻找循环组合（`--repair`：达到 rho>=1 的最小单边干预规划，
+      含一阶弹性估计交叉核对；`critical_parameter` 给出临界目标数 N）
+- [ ] 版本数据管理（不同版本/模式/祝福的 A 矩阵库，§7 步骤 8）
 
 ## 目录结构
 
@@ -88,7 +98,8 @@ python main.py examples/theory_document/audit_workflow_demo.json --audit
 src/
   matrix/      转移矩阵引擎（transfer_matrix, perron, irreducibility,
                capped, family, validator, visualization）
-  analyzer/    八步审计（audit）、扰动测试（robustness）、瓶颈/循环检测
+  analyzer/    瓶颈敏感性（bottleneck）、修复规划与临界 N（optimizer）、
+               八步审计（audit）、扰动测试（robustness）、循环检测（legacy）
   simulation/  离散时序引擎（timed_engine, speed_engine, engine）
   battle/      行动值/战斗状态（legacy 骨架）
   data_loader/ 角色与矩阵示例加载

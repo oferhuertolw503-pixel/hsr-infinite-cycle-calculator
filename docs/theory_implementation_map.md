@@ -20,6 +20,9 @@
 | §3 定理 3 | `rho>1` 仅增长方向 | regime=`growth` + caveats；`growth_doubling_time` | `test_classify_growth` |
 | §3 反推限制 | 上限/阈值/时序/敌方四类约束 | `classify` 的 caveats 恒附注 | `test_classify_growth` 断言"不能单独推出实战无限循环" |
 | §4 | Perron 向量 = 相对频率、瓶颈定位 | `perron_frequencies`（最小份额节点标记 `flagged_as_scarce`） | `test_perron_vector_normalized` |
+| §4/§8 | 边际弹性 `d rho/d a_ij = u_i v_j/(u^T v)`、脆弱边、潜在新边 | `src/analyzer/bottleneck.py` `BottleneckAnalyzer`（CLI `--sensitivity`）；边际弹性小≠整边可缺：审计演示中 T_U 自充能弹性仅第 31 位,整边移除却翻转为衰减 | `tests/test_bottleneck.py` |
+| §8 | 最小干预修复（矩阵层"自动寻找循环组合"） | `src/analyzer/optimizer.py` `CycleRepairPlanner`（CLI `--repair`）：单边放大/新增边的二分定界 + 一阶弹性估计交叉核对 | `tests/test_optimizer.py` |
+| §8 | 目标数从哪里进入系统：临界 N | `src/analyzer/optimizer.py` `critical_parameter`；`--family` 输出附临界参数 | `test_critical_parameter_*` |
 | §5.1 | 上限：`x_{t+1}=min(c, x_t A + b_t)` | `src/matrix/capped.py` `CappedTransferSystem` | `tests/test_capped.py` |
 | §5.2 | 阈值/目标数：`A=A(x_t,N,s_t)` | `src/matrix/family.py` `MatrixFamily`；N 进入 T_U 相关转移的七节点族 | `tests/test_theory_examples.py`、`test_family` 相关 |
 | §5.3 | 时序：`Executable(e_k)⟺x_k≥cost ∧ condition` | `src/simulation/timed_engine.py` `TimedBattleEngine`；速度驱动引擎 `src/simulation/speed_engine.py` | `tests/test_timed_engine.py`、`tests/test_speed_engine.py` |
@@ -44,6 +47,25 @@
 | `seven_node_family.json --family` | 1.00522 / 1.01825 / 1.03129 / 1.04432 (N=2..5) | 七节点模型 N=2..5 |
 
 > 注意：文档 §6 只记录了谱半径，未给出原矩阵。示例矩阵是"谱半径与文档一致"的**重构演示值**，非截图原值；如需正式结论，应把截图中的真实矩阵按 §7 流程逐边填表后替换。
+
+## 瓶颈定位与修复规划（§4/§8）
+
+`python main.py <示例> --sensitivity --repair` 在谱半径与 Perron 分析之上回答 §8 的三个定位问题：
+
+- **哪条资源边决定成败**：`BottleneckAnalyzer` 用 Karlin 弹性公式 `d rho/d a_ij = u_i v_j/(u^T v)`
+  （左右 Perron 向量的逐边乘积）给出边际敏感度排序，并与 `edge_sensitivity` 的数值差分交叉验证
+  （示例矩阵上最大相对误差 ~1e-8）；主导特征值非单实根（可约/周期结构）时自动退化为数值排序。
+- **边际 vs 整体**：`fragile_edges` 按整边移除后的 rho 跌幅排序。两者可以截然不同——
+  审计演示中 T_U 自充能边的边际弹性仅排第 31 位，但整边移除即翻转为衰减（"一次未击杀断轴"）。
+  这正是 §4 "若某一节点产出不足，系统会偏离主导方向"的定量形式。
+- **怎么修**：`CycleRepairPlanner` 对每条边二分搜索达到目标谱半径（默认临界 rho=1）的最小干预
+  （既有边放大系数或新增边取值），按干预量排序，附一阶弹性估计 `(target-rho)/(d rho/d a_ij)` 交叉核对；
+  无环结构中任何既有边放大都无效（rho 恒为 0），必须新增回边或自环才能成环。
+- **目标数从哪里进入系统**：`critical_parameter` 对 N 依赖族给出最小的非衰减 N 及其前一档；
+  族内全衰减时明确警告外推风险（§7 步骤 8）。
+
+所有修复结论沿用 §6 措辞：达到 rho>=1 只说明线性近似存在增长方向，实战仍须按 §5 四类约束
+（上限、阈值、时序、敌方行动）逐项验证。
 
 ## 重构示例的再生
 

@@ -16,6 +16,8 @@ import argparse
 import sys
 
 from .analyzer.audit import CycleAudit
+from .analyzer.bottleneck import BottleneckAnalyzer
+from .analyzer.optimizer import CycleRepairPlanner, critical_parameter
 from .data_loader.matrix_loader import load_example_json, load_family, load_transfer_matrix
 from .matrix.transfer_matrix import TransferMatrix
 
@@ -30,7 +32,55 @@ def _print_perron(model):
         print(f"  {row['node']:>10s}  {row['frequency']:.6f}{flag}")
 
 
-def _print_single(path, audit=False):
+def _print_sensitivity(model, top=5):
+    analysis = BottleneckAnalyzer(model).analyze()
+    print("\n瓶颈与敏感性分析(§4/§8):")
+    if analysis["analytic"]:
+        print(f"  解析梯度 d_rho/d_a_ij = u_i*v_j 可用"
+              f"  (与数值差分最大相对误差 {analysis['max_relative_error']:.2e})")
+    else:
+        print("  解析梯度不可用,排序退化为数值差分")
+    scarce = analysis["scarce_node"]
+    if scarce:
+        print(f"  最小份额节点: {scarce['node']} (frequency="
+              f"{scarce['frequency']:.6f})  <-- 最先断粮候选(§4)")
+    print(f"  决定性资源边 Top{top} (边际敏感度 |d rho/d a_ij|):")
+    for row in analysis["decisive_edges"][:top]:
+        print(f"    {row['from']:>10s} -> {row['to']:<10s} a_ij={row['value']:.4f}"
+              f"  d_rho={row['d_rho']:+.6f}")
+    print(f"  脆弱边 Top{top} (整边移除后 rho 跌幅,对应'一次未击杀'):")
+    for row in analysis["fragile_edges"][:top]:
+        flag = "" if row["load_bearing"] else "  (非承重)"
+        print(f"    {row['from']:>10s} -> {row['to']:<10s} a_ij={row['value']:.4f}"
+              f"  移除后 rho={row['drop_rho']:.6g} (delta {row['drop_delta']:+.4f}){flag}")
+    if analysis["dormant_edges"]:
+        print(f"  潜在新边 Top3 (新增一条转移边的边际收益):")
+        for row in analysis["dormant_edges"][:3]:
+            print(f"    {row['from']:>10s} -> {row['to']:<10s} d_rho={row['d_rho']:+.6f}")
+    return analysis
+
+
+def _print_repair(model, target_rho=1.0, top=5):
+    plan = CycleRepairPlanner(model).plan(target_rho=target_rho)
+    print(f"\n循环修复规划(自动寻找循环组合,目标 rho>={target_rho}):")
+    if not plan["needed"]:
+        print(f"  rho(A)={plan['rho']:.6g} 已达/超过目标,无需修复。")
+        return plan
+    if plan["best"] is None:
+        print("  任何单边干预在界限内都无法达到目标谱半径;")
+        print("  须改循环结构(加边/换节点)或提高目标数。")
+        return plan
+    print(f"  基矩阵 rho={plan['rho']:.6g},按干预量排序的最小修复:")
+    for row in plan["candidates"][:top]:
+        kind = f"系数 x{row['multiplier']:.4f}" if row["kind"] == "boost" else "新增边"
+        print(f"    {row['from']:>10s} -> {row['to']:<10s} {kind}"
+              f"  a_ij: {row['value']:.4f} -> {row['new_value']:.4f}"
+              f"  (增加 {row['added']:.4f},rho -> {row['achieved_rho']:.6g})")
+    print("  * " + plan["note"])
+    return plan
+
+
+def _print_single(path, audit=False, sensitivity=False, repair=False):
     data = load_example_json(path)
     model = TransferMatrix(data["matrix"], node_names=data.get("nodes"))
 
@@ -52,6 +102,12 @@ def _print_single(path, audit=False):
         print(f"\n文档对照(§6): 记录值 {documented_rho} -> 一致: {match}")
 
     _print_perron(model)
+
+    if sensitivity:
+        _print_sensitivity(model)
+
+    if repair:
+        _print_repair(model)
 
     if audit:
         print("\n--- §7 复核流程审计 ---")
@@ -102,6 +158,9 @@ def _print_family(path):
         match = "一致" if row["matches_target"] else ("-" if row["target_rho"] is None else "偏差")
         print(f"{row['key']:>4s}  {row['rho']:10.6g}  {row['regime']:>8s}  "
               f"{str(row['irreducible']):>6s}  {match:>8s}")
+    critical = critical_parameter(family)
+    print(f"\n临界参数(§8 目标数从哪里进入系统): {critical['status']}")
+    print(f"  {critical['note']}")
     if family.notes:
         print("\n说明:", family.notes)
     return sweep
@@ -117,11 +176,16 @@ def run_cli(argv=None):
                         help="按参数族(N 依赖矩阵)分析")
     parser.add_argument("--audit", action="store_true",
                         help="运行 §7 八步复核流程审计")
+    parser.add_argument("--sensitivity", action="store_true",
+                        help="瓶颈与敏感性分析:决定性资源边/脆弱边/潜在新边(§4/§8)")
+    parser.add_argument("--repair", action="store_true",
+                        help="循环修复规划:达到 rho>=1 的最小单边干预(目标数族请用 --family)")
     args = parser.parse_args(argv if argv is not None else sys.argv[1:])
 
     if args.family:
         return _print_family(args.example)
-    return _print_single(args.example, audit=args.audit)
+    return _print_single(args.example, audit=args.audit,
+                         sensitivity=args.sensitivity, repair=args.repair)
 
 
 if __name__ == "__main__":
