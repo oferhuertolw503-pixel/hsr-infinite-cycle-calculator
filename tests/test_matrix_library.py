@@ -89,17 +89,21 @@ def test_undocumented_variants_are_flagged():
 def test_demo_library_loads_all_variants():
     library = load_matrix_library(LIBRARY)
     comparison = library.compare()
-    assert len(comparison["rows"]) == 5
+    assert len(comparison["rows"]) == 9
     assert comparison["regimes"] == ["decay", "growth"]
     assert comparison["consensus"] is False
-    # Two granularities: four-node and seven-node event lists.
-    assert len(comparison["node_groups"]) == 2
+    # Three granularities: four-node recon (A/B/C/D), seven-node, and the
+    # real four-node kill model (H/H_U/T/T_U).
+    assert len(comparison["node_groups"]) == 3
     # Source references keep the documented rho values in sync.
     documented = [r for r in comparison["rows"] if "matches_documented" in r]
     assert {round(r["rho"], 5) for r in documented} == {
-        0.88353, 1.02442, 1.00522
+        0.88353, 1.02442, 1.00522, 1.04432
     }
     assert all(r["matches_documented"] for r in documented)
+    # Real matrices carry 实测 provenance.
+    real = [r for r in comparison["rows"] if "实测" in str(r["provenance"])]
+    assert len(real) == 4
 
 
 def test_demo_library_perturbation_reference_values():

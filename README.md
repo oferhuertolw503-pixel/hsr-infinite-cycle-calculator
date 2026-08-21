@@ -51,6 +51,8 @@ python main.py examples/theory_document/four_node_model_N5.json --sensitivity --
 python main.py examples/theory_document/four_node_kill_energy.json --audit
 python main.py examples/theory_document/seven_node_family.json --family
 python main.py examples/theory_document/version_matrix_library.json --library
+python main.py examples/theory_document/seven_node_real_family.json --family
+python main.py examples/theory_document/four_node_kill_real_family.json --family
 python main.py examples/theory_document/audit_workflow_demo.json --audit
 python main.py examples/theory_document/audit_workflow_demo.json --report
 ```
@@ -72,6 +74,14 @@ x1.26（增加 0.16）即达临界 rho=1。`--family` 输出附临界目标数 N
 regime 不一致时明确警告"结论上下文绑定，禁止外推"，多粒度时提示
 rho 不可跨粒度排名。`--report` 输出谱半径+Perron+瓶颈+时序断轴分类
 的一键完整报告。
+
+**截图实测矩阵**（`样例/` 截图逐边转录，数值全部对齐后才入库）：
+`seven_node_real_family.json` 复现截图特征值 N=2..5 = 1.00522/1.01872/
+1.03174/1.04432 与 N=5 特征向量；`four_node_kill_real_family.json` 复现
+rho=1.02442 与文档 §4 的 α——且给出真实临界目标数：N=3 时 0.99683<1
+仍衰减，N=4 时 1.01088 首次越过 1（§8）。实测变体已入版本矩阵库
+（provenance="实测"）。第一组参数衰减族（0.88353）的截图矩阵未能完全
+恢复（显示矩阵与特征值不自洽），仍用重构值，详见映射文档。
 
 示例图（`docs/figures/`）：四节点转移矩阵热力图/有向图、七节点族 rho 曲线。
 

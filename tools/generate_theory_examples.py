@@ -72,6 +72,43 @@ def round_matrix(matrix, decimals=8):
     return [[round(float(x), decimals) for x in row] for row in matrix]
 
 
+# -- real matrices transcribed from the source screenshots (样例/) --------
+# Verified against the numbers displayed in the screenshots:
+#   * seven-node: eigenvalues N=2..5 = 1.00522/1.01872/1.03174/1.04432
+#     (exact to 5 decimals) plus the N=5 eigenvector.  The screenshot
+#     DISPLAYS the T -> C_U entry as 1/4, but only 1/2 reproduces all
+#     documented values; recorded as 1/2 here.
+#   * four-node kill-energy (H/H_U/T/T_U): rho(N=5) = 1.02442 and the
+#     eigenvector alpha = (0.304637, 0.832597, 0.202899, 0.415706).
+SEVEN_REAL_RHO = {"2": 1.00522, "3": 1.01872, "4": 1.03174, "5": 1.04432}
+SEVEN_REAL_EIGVEC_N5 = (0.28, 0.61, 0.19, 0.51, 0.20, 0.27, 0.37)
+ALPHA_FOUR = (0.304637, 0.832597, 0.202899, 0.415706)
+
+
+def seven_node_real(N):
+    """Seven-node transfer matrix from the screenshots, N = target count."""
+    A = np.zeros((7, 7))
+    A[0] = [0, 1 / 4, 0, 0, 1 / 4, 0, 1 / 4]                    # H
+    A[1] = [3 / 5, 3 / 5, 0, 1 / 5, 0, 0, 0]                    # H_U
+    A[2] = [0, 0, 0, 0, 1 / 2, 0, 1 / 4]                        # C
+    A[3] = [3 / 6, 3 / 6, 0.5 / 6, 0, 2 / 6, 0, 0]              # M
+    A[4] = [3 / 20, 4 / 20, 5 / 20, 0, 0, 0, 0]                 # C_U
+    A[5] = [0, 0, 0, 0, 1 / 2, 0, 1 / 2]                        # T
+    A[6] = [(4.5 * N + 5) / 97.5, 6 * N / 97.5, 0, 0,           # T_U
+             1.5 * N / 97.5, 30 / 97.5, 5 / 97.5]
+    return A
+
+
+def four_node_kill_real(N):
+    """Four-node kill-energy matrix (H/H_U/T/T_U) from the screenshots."""
+    A = np.zeros((4, 4))
+    A[0] = [0, 1 / 4, 0, 1 / 4]                                 # H
+    A[1] = [3 / 4, 3 / 4, 0, 0]                                 # H_U
+    A[2] = [0, 0, 0, 1 / 2]                                     # T
+    A[3] = [(4.5 * N + 5) / 97.5, 6 * N / 97.5, 30 / 97.5, 5 / 97.5]  # T_U
+    return A
+
+
 def build_seven_family():
     """N enters the T_U-related transfers (theory 5.2): more targets -> more
     军功 (M) and more self energy for 缇宝大招.  N=2 matches the documented
@@ -163,6 +200,68 @@ def main():
     }
     (OUT_DIR / "seven_node_family.json").write_text(
         json.dumps(seven, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    # -- seven-node REAL matrix family (from the screenshots) --------------
+    seven_real = {
+        "name": "七节点实测模型 (截图矩阵, N=2..5)",
+        "source": "screenshot",
+        "section": "2.1, 5.2, 6",
+        "provenance": (
+            "实测:截图矩阵逐边转录;特征值 N=2..5 与截图表 1.00522/1.01872/"
+            "1.03174/1.04432 全部对齐(5 位小数),N=5 特征向量对齐。"
+            "注意:截图 T->C_U 显示为 1/4,但只有 1/2 能复现全部截图数值,"
+            "此处按 1/2 记录。"
+        ),
+        "nodes": SEVEN_NODES,
+        "parameter": "N",
+        "matrices_by_N": {
+            str(N): round_matrix(seven_node_real(N)) for N in (2, 3, 4, 5)
+        },
+        "rho_target_by_N": dict(SEVEN_REAL_RHO),
+        "documented_perron_N5": list(SEVEN_REAL_EIGVEC_N5),
+        "tolerance": 1e-5,
+        "notes": (
+            "截图原矩阵(非重构):H/H_U/C/M/C_U/T/T_U 七节点;N 只进入 T_U 行"
+            "((4.5N+5)/97.5、6N/97.5、1.5N/97.5),体现 §5.2 目标数进入矩阵条目。"
+            "截图来源:样例/屏幕截图 2026-08-22 002415/002429.png。"
+        ),
+    }
+    (OUT_DIR / "seven_node_real_family.json").write_text(
+        json.dumps(seven_real, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    # -- four-node kill-energy REAL matrix family (from the screenshots) ---
+    # The screenshot only documents rho(N=5) = 1.02442 and alpha; the
+    # N=2..4 values are computed from the real matrix and expose the
+    # critical target count N=4 (0.99683 -> 1.01088), section 8.
+    four_kill_real = {
+        "name": "四节点击杀回能实测模型 (姬子+缇宝, N=2..5)",
+        "source": "screenshot",
+        "section": "4, 6",
+        "provenance": (
+            "实测:截图矩阵逐边转录;rho(N=5)=1.02442 与特征向量 "
+            "alpha=(0.304637, 0.832597, 0.202899, 0.415706) 全部对齐。"
+        ),
+        "nodes": ["H", "H_U", "T", "T_U"],
+        "parameter": "N",
+        "matrices_by_N": {
+            str(N): round_matrix(four_node_kill_real(N)) for N in (2, 3, 4, 5)
+        },
+        "rho_target_by_N": {"5": RHO_KILL_ENERGY},
+        "documented_perron": list(ALPHA_FOUR),
+        "tolerance": 1e-5,
+        "notes": (
+            "截图原矩阵(非重构):N 只进入 T_U 行;截图只记录 N=5 的 1.02442,"
+            "N=2..4 为实测矩阵的计算值:N=3 时 0.99683<1 仍衰减,"
+            "N=4 时 1.01088 首次越过 1 —— 真实数据的临界目标数(§8)。"
+            "截图来源:样例/屏幕截图 2026-08-22 002449.png。"
+        ),
+    }
+    (OUT_DIR / "four_node_kill_real_family.json").write_text(
+        json.dumps(four_kill_real, ensure_ascii=False, indent=2),
+        encoding="utf-8",
     )
 
     # -- full audit workflow demo (theory section 7) ----------------------------

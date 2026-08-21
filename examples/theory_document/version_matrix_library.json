@@ -2,7 +2,7 @@
   "name": "版本/模式矩阵库演示 (§7 步骤 8)",
   "source": "theory_document",
   "section": "7",
-  "notes": "演示'不同版本、模式、祝福和敌方机制对应不同 A':四节点组内,敌方是否持续刷新击杀决定 decay/growth;七节点组内,目标数与击杀是否持续同样改变结论。所有矩阵经 source 引用既有示例文件(可再生),不另行复制数值;条目为重构演示值,非截图原值。",
+  "notes": "演示'不同版本、模式、祝福和敌方机制对应不同 A':四节点组内,敌方是否持续刷新击杀决定 decay/growth;七节点组内,目标数与击杀是否持续同样改变结论。前五个变体经 source 引用重构示例文件(可再生);后四个为截图实测矩阵(样例/ 目录,特征值/特征向量与截图全部对齐),其中实测击杀回能族给出真实临界目标数 N=4(N=3 时 rho=0.99683<1)。条目与来源以各变体 provenance 为准。",
   "variants": [
     {
       "name": "四节点·第一组参数 (N=5)",
@@ -45,6 +45,42 @@
       "mode": "多目标环境",
       "enemy": "2 目标,一次未击杀后不刷新",
       "provenance": "重构演示值(审计演示扰动用例)"
+    },
+    {
+      "name": "七节点·实测矩阵 (N=2)",
+      "source": "seven_node_real_family.json",
+      "family_key": "2",
+      "version": "文档 §6 七节点模型",
+      "mode": "多目标环境",
+      "enemy": "2 目标,击杀持续刷新",
+      "provenance": "实测(截图矩阵;特征值 N=2..5 与 N=5 特征向量全部对齐)"
+    },
+    {
+      "name": "七节点·实测矩阵 (N=5)",
+      "source": "seven_node_real_family.json",
+      "family_key": "5",
+      "version": "文档 §6 七节点模型",
+      "mode": "多目标环境",
+      "enemy": "5 目标,击杀持续刷新",
+      "provenance": "实测(截图矩阵;特征值 N=2..5 与 N=5 特征向量全部对齐)"
+    },
+    {
+      "name": "四节点(姬子+缇宝)·实测击杀回能 (N=3)",
+      "source": "four_node_kill_real_family.json",
+      "family_key": "3",
+      "version": "文档 §6 案例二实测版",
+      "mode": "多目标环境",
+      "enemy": "3 目标,击杀回能",
+      "provenance": "实测矩阵;N=3 rho=0.99683 为实测矩阵计算值(仍衰减)"
+    },
+    {
+      "name": "四节点(姬子+缇宝)·实测击杀回能 (N=5)",
+      "source": "four_node_kill_real_family.json",
+      "family_key": "5",
+      "version": "文档 §6 案例二实测版",
+      "mode": "多目标环境",
+      "enemy": "5 目标,击杀回能且持续刷新",
+      "provenance": "实测(截图矩阵;rho=1.02442 与 alpha 特征向量对齐)"
     }
   ]
 }

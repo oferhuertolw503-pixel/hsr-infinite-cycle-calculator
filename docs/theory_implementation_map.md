@@ -27,7 +27,7 @@
 | §5.2 | 阈值/目标数：`A=A(x_t,N,s_t)` | `src/matrix/family.py` `MatrixFamily`；N 进入 T_U 相关转移的七节点族 | `tests/test_theory_examples.py`、`test_family` 相关 |
 | §5.3 | 时序：`Executable(e_k)⟺x_k≥cost ∧ condition` | `src/simulation/timed_engine.py` `TimedBattleEngine`；速度驱动引擎 `src/simulation/speed_engine.py` | `tests/test_timed_engine.py`、`tests/test_speed_engine.py` |
 | §5.4 | 敌方时钟 `q_t`、插队/额外回合不推进 | `TimedBattleEngine`（`enemy_av`、`no_advance`）；`SpeedBattleEngine` 的敌方行动值 | `test_enemy_clock_*`、`test_inserted_actions_*`、`tests/test_speed_engine.py` |
-| §6 | 案例数值：0.88353 / 1.02442 / 1.00522..1.04432 | `examples/theory_document/*.json`（重构演示矩阵） | `tests/test_theory_examples.py` |
+| §6 | 案例数值：0.88353 / 1.02442 / 1.00522..1.04432 | `examples/theory_document/*.json`（重构演示矩阵）；**实测矩阵** `seven_node_real_family.json`、`four_node_kill_real_family.json`（截图转录,数值全对齐） | `tests/test_theory_examples.py` |
 | §7 | 八步复核流程 | `src/analyzer/audit.py` `CycleAudit`；全流程示例 `examples/theory_document/audit_workflow_demo.json` | `tests/test_audit.py`、`tests/test_audit_demo.py` |
 | §7 步骤 7 | 扰动测试（N/未击杀/治疗缺失/插队） | `src/analyzer/robustness.py` | `tests/test_robustness.py` |
 | §7 步骤 8 | 版本数据管理：不同版本/模式/祝福/敌方机制的 A 矩阵库 | `src/matrix/library.py` `MatrixLibrary`/`MatrixVariant` + `load_matrix_library`（`source`/`family_key`/`perturbation` 引用,可再生）；CLI `--library`；演示 `examples/theory_document/version_matrix_library.json` | `tests/test_matrix_library.py` |
@@ -49,7 +49,23 @@
 | `four_node_kill_energy.json` | 1.02442 | 调整转移并加入击杀回能 |
 | `seven_node_family.json --family` | 1.00522 / 1.01825 / 1.03129 / 1.04432 (N=2..5) | 七节点模型 N=2..5 |
 
-> 注意：文档 §6 只记录了谱半径，未给出原矩阵。示例矩阵是"谱半径与文档一致"的**重构演示值**，非截图原值；如需正式结论，应把截图中的真实矩阵按 §7 流程逐边填表后替换。
+> 注意：文档 §6 只记录了谱半径，未给出原矩阵。上表示例矩阵是"谱半径与文档一致"的**重构演示值**，非截图原值；如需正式结论，应把截图中的真实矩阵按 §7 流程逐边填表后替换。
+
+## 截图实测矩阵（样例/ 目录，2026-08-22）
+
+用户提供的三张有效截图已逐边转录并通过 `tools/generate_theory_examples.py` 生成**实测**示例（全部数值对齐截图后才入库）：
+
+| 示例 | 对齐校验 | 结论 |
+|---|---|---|
+| `seven_node_real_family.json --family` | 特征值 N=2..5 = 1.00522/1.01872/1.03174/1.04432（5 位小数全对齐）+ N=5 特征向量 (0.28,0.61,0.19,0.51,0.20,0.27,0.37) | 截图原七节点矩阵；N 只进入 T_U 行（(4.5N+5)/97.5、6N/97.5、1.5N/97.5），§5.2 的直接实证 |
+| `four_node_kill_real_family.json --family` | rho(N=5)=1.02442 + 特征向量 α=(0.304637,0.832597,0.202899,0.415706)（文档 §4 的 α 即源于此） | 截图姬子+缇宝四节点矩阵；N=2..4 为实测矩阵计算值：**N=3 时 0.99683<1 仍衰减，N=4 时 1.01088 首次越过 1** —— 真实数据的临界目标数（§8，`critical_parameter` 返回 N=4） |
+
+转录校验说明：
+
+- 七节点截图 T→C_U 单元格**显示**为 1/4，但只有取 1/2 才能同时复现全部四个特征值与特征向量；按 1/2 记录并在示例 `provenance` 中注明。
+- 四节点第一组参数（0.82543..0.88353 衰减族，截图 002440）**未能恢复**：按显示矩阵计算得 rho=0.88856≠0.88353，且四个特征值对 N 完全线性、与单变量 N 依赖结构矛盾；欠定方程组无法唯一反解。该案例仍使用重构示例，恢复留作待办（需原图更高分辨率或原始计算器数据）。
+- 截图 002449 中社区的"可无限循环"表述即文档 §6 修正的对象：rho>1 只是线性增长方向。
+- 实测变体已加入 `version_matrix_library.json`（provenance="实测..."），`--library` 可对比重构与实测结论。
 
 ## 瓶颈定位与修复规划（§4/§8）
 
