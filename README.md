@@ -1,6 +1,6 @@
 # HSR Infinite Cycle Calculator
 
-崩坏：星穹铁道永动机数学建模与计算器。
+崩坏：星穹铁道永动机数学建模与计算器。（by ChatGPT）
 
 ## 项目目标
 
