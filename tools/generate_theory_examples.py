@@ -224,7 +224,8 @@ def main():
         "notes": (
             "截图原矩阵(非重构):H/H_U/C/M/C_U/T/T_U 七节点;N 只进入 T_U 行"
             "((4.5N+5)/97.5、6N/97.5、1.5N/97.5),体现 §5.2 目标数进入矩阵条目。"
-            "截图来源:样例/屏幕截图 2026-08-22 002415/002429.png。"
+            "截图来源:docs/screenshots/case_7node_matrix.png、"
+            "case_matrix_definition.png(原件在 样例/)。"
         ),
     }
     (OUT_DIR / "seven_node_real_family.json").write_text(
@@ -256,7 +257,7 @@ def main():
             "截图原矩阵(非重构):N 只进入 T_U 行;截图只记录 N=5 的 1.02442,"
             "N=2..4 为实测矩阵的计算值:N=3 时 0.99683<1 仍衰减,"
             "N=4 时 1.01088 首次越过 1 —— 真实数据的临界目标数(§8)。"
-            "截图来源:样例/屏幕截图 2026-08-22 002449.png。"
+            "截图来源:docs/screenshots/case_4node_kill.png(原件在 样例/)。"
         ),
     }
     (OUT_DIR / "four_node_kill_real_family.json").write_text(

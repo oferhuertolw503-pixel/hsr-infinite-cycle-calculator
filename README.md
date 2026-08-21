@@ -2,7 +2,7 @@
 
 崩坏：星穹铁道永动机数学建模与计算器。
 
-开发依据：《崩铁永动机的矩阵理论.md》——资源转移矩阵的谱半径决定线性长期趋势；实战"永动"还须满足上限、阈值、时序与敌方行动四类约束。理论到代码的逐节映射见 [docs/theory_implementation_map.md](docs/theory_implementation_map.md)。
+开发依据：《崩铁永动机的矩阵理论.md》——资源转移矩阵的谱半径决定线性长期趋势；实战"永动"还须满足上限、阈值、时序与敌方行动四类约束。理论到代码的逐节映射见 [docs/theory_implementation_map.md](docs/theory_implementation_map.md)；端到端案例（`样例/` 截图的完整建模与核验）见 [docs/case_study_yangli.md](docs/case_study_yangli.md)。
 
 ## 项目目标
 

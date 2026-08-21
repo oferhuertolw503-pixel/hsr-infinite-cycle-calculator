@@ -69,6 +69,15 @@
 - 截图 002449 中社区的"可无限循环"表述即文档 §6 修正的对象：rho>1 只是线性增长方向。
 - 实测变体已加入 `version_matrix_library.json`（provenance="实测..."），`--library` 可对比重构与实测结论。
 
+## 案例研究（样例截图 → 一个连贯案例）
+
+`样例/` 四张截图是同一案例的三阶段建模过程，完整分析与复现命令见
+[docs/case_study_yangli.md](case_study_yangli.md)（截图已归档
+`docs/screenshots/case_*.png`）：四节点初版衰减族（未恢复，如实记录）→
+四节点击杀回能（转录实测，临界目标数 N=4）→ 七节点完整模型
+（转录实测，N 只进入 T_U 行）。案例的"可无限循环"表述经 §6 修正，
+关键边定位在 H_U→H_U、断粮候选在 T。
+
 ## 瓶颈定位与修复规划（§4/§8）
 
 `python main.py <示例> --sensitivity --repair` 在谱半径与 Perron 分析之上回答 §8 的三个定位问题：
