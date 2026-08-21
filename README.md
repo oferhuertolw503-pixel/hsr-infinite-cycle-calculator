@@ -19,6 +19,8 @@
 - 八步复核流程审计（§7）与扰动测试
 - 瓶颈定位与敏感性分析（§4/§8：解析弹性 `d rho/d a_ij = u_i v_j`、脆弱边、潜在新边）
 - 循环修复规划（矩阵层"自动寻找循环组合"：最小单边干预达到 rho>=1、临界目标数 N）
+- 版本数据管理（§7 步骤 8：`MatrixLibrary` 把每张 A 与版本/模式/祝福/敌方机制绑定后对比，regime 不一致即警告禁止外推）
+- 断轴分类与时序报告（§8"断轴究竟是资源问题还是时序问题"：`CycleDetector` + `--report` 一键汇总）
 
 核心思想：
 
@@ -48,7 +50,9 @@ python main.py examples/theory_document/four_node_model_N5.json
 python main.py examples/theory_document/four_node_model_N5.json --sensitivity --repair
 python main.py examples/theory_document/four_node_kill_energy.json --audit
 python main.py examples/theory_document/seven_node_family.json --family
+python main.py examples/theory_document/version_matrix_library.json --library
 python main.py examples/theory_document/audit_workflow_demo.json --audit
+python main.py examples/theory_document/audit_workflow_demo.json --report
 ```
 
 `examples/theory_document/` 下的示例复现理论文档 §6 的谱半径数值
@@ -62,6 +66,12 @@ python main.py examples/theory_document/audit_workflow_demo.json --audit
 B→B 是决定性边（弹性最大、也最脆弱）；最小修复为把 B→B 系数
 x1.26（增加 0.16）即达临界 rho=1。`--family` 输出附临界目标数 N
 （"目标数从哪里进入系统"，§8）。
+`version_matrix_library.json --library` 演示 §7 步骤 8 版本数据管理：
+五个变体（四节点/七节点 × 不同敌方机制与目标数）经 `source` 引用
+既有示例文件（可再生、不复制数值），对比表给出各上下文的 rho/regime；
+regime 不一致时明确警告"结论上下文绑定，禁止外推"，多粒度时提示
+rho 不可跨粒度排名。`--report` 输出谱半径+Perron+瓶颈+时序断轴分类
+的一键完整报告。
 
 示例图（`docs/figures/`）：四节点转移矩阵热力图/有向图、七节点族 rho 曲线。
 
@@ -84,22 +94,28 @@ x1.26（增加 0.16）即达临界 rho=1。`--family` 输出附临界目标数 N
 - [x] 敌方行动约束（行动值时钟，闭环须在敌方行动前完成）
 - [ ] 完整技能/光锥/命座数据表与优先级编辑器（游戏侧数据录入）
 
-### Phase 3: Optimization（矩阵层）
+### Phase 3: Optimization（矩阵层）✅
 
 - [x] 参数敏感性分析（`--sensitivity`：解析弹性 `d rho/d a_ij = u_i v_j`、
       数值差分交叉验证、脆弱边/潜在新边排序；主导根非单实根时自动退化数值）
 - [x] 自动寻找循环组合（`--repair`：达到 rho>=1 的最小单边干预规划，
       含一阶弹性估计交叉核对；`critical_parameter` 给出临界目标数 N）
-- [ ] 版本数据管理（不同版本/模式/祝福的 A 矩阵库，§7 步骤 8）
+- [x] 版本数据管理（`--library`：`MatrixLibrary` 版本/模式/祝福/敌方机制
+      注册表，`compare()` 给出 regime 一致性与外推警告，§7 步骤 8）
+- [x] 断轴分类与一键报告（`CycleDetector` 资源/触发/时序三类断轴，
+      `Report` + `--report` 汇总，§8）
+
+模拟器层（后续）：基于 `SpeedBattleEngine` 的队伍搜索与稳定性最大化。
 
 ## 目录结构
 
 ```
 src/
   matrix/      转移矩阵引擎（transfer_matrix, perron, irreducibility,
-               capped, family, validator, visualization）
+               capped, family, library, validator, visualization）
   analyzer/    瓶颈敏感性（bottleneck）、修复规划与临界 N（optimizer）、
-               八步审计（audit）、扰动测试（robustness）、循环检测（legacy）
+               版本矩阵库对比（library+loader）、断轴分类（cycle_detector）、
+               一键报告（report）、八步审计（audit）、扰动测试（robustness）
   simulation/  离散时序引擎（timed_engine, speed_engine, engine）
   battle/      行动值/战斗状态（legacy 骨架）
   data_loader/ 角色与矩阵示例加载

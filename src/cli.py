@@ -6,6 +6,8 @@ Examples:
     python main.py examples/theory_document/four_node_model_N5.json
     python main.py examples/theory_document/seven_node_family.json --family
     python main.py examples/theory_document/four_node_kill_energy.json --audit
+    python main.py examples/theory_document/version_matrix_library.json --library
+    python main.py examples/theory_document/audit_workflow_demo.json --report
 
 The wording of the conclusions follows the theory document section 6: a
 spectral radius above 1 is reported as a growth direction of the linear
@@ -18,8 +20,15 @@ import sys
 from .analyzer.audit import CycleAudit
 from .analyzer.bottleneck import BottleneckAnalyzer
 from .analyzer.optimizer import CycleRepairPlanner, critical_parameter
-from .data_loader.matrix_loader import load_example_json, load_family, load_transfer_matrix
+from .analyzer.report import Report
+from .data_loader.matrix_loader import (
+    load_example_json,
+    load_family,
+    load_matrix_library,
+    load_transfer_matrix,
+)
 from .matrix.transfer_matrix import TransferMatrix
+from .simulation.timed_engine import TimedBattleEngine, TimedEvent
 
 
 def _print_perron(model):
@@ -166,6 +175,56 @@ def _print_family(path):
     return sweep
 
 
+def _print_library(path):
+    library = load_matrix_library(path)
+    comparison = library.compare()
+    print("=" * 60)
+    print("HSR 永动机矩阵分析 (版本/模式矩阵库, §7 步骤 8)")
+    print("=" * 60)
+    print("库:", comparison["library"])
+    rho_range = comparison["rho_range"]
+    range_text = (
+        f"{rho_range[0]:.6g} .. {rho_range[1]:.6g}" if rho_range else "(空)"
+    )
+    print(f"变体数: {len(comparison['rows'])}  "
+          f"regimes: {comparison['regimes']}  rho 范围: {range_text}")
+    print(f"\n{'变体':<24s}  {'版本':<14s}  {'模式':<8s}  {'敌方机制':<24s}  "
+          f"{'rho(A)':>10s}  {'regime':>8s}  {'不可约':>6s}")
+    for row in comparison["rows"]:
+        print(f"{row['name']:<24s}  {str(row.get('version', '-')):<14s}  "
+              f"{str(row.get('mode', '-')):<8s}  "
+              f"{str(row.get('enemy', '-')):<24s}  "
+              f"{row['rho']:10.6g}  {row['regime']:>8s}  "
+              f"{str(row['irreducible']):>6s}")
+    for node_set, names in comparison["node_groups"].items():
+        print(f"\n节点粒度 [{'/'.join(node_set)}]: {', '.join(names)}")
+    consensus = ("一致" if comparison["consensus"]
+                 else "不一致 --> 结论上下文绑定,禁止外推")
+    print(f"\nregime 一致性: {consensus}")
+    for warning in comparison["warnings"]:
+        print("  * 警告:", warning)
+    if library.notes:
+        print("\n说明:", library.notes)
+    return comparison
+
+
+def _print_report(path):
+    data = load_example_json(path)
+    model = TransferMatrix(data["matrix"], node_names=data.get("nodes"))
+    timing = None
+    if data.get("sequence"):
+        sequence = [
+            TimedEvent(**item) if isinstance(item, dict) else item
+            for item in data["sequence"]
+        ]
+        timing = TimedBattleEngine(
+            sequence, enemy_av0=data.get("enemy_av0") or 100.0
+        ).run({"energy": 0.0, "skill_points": 0.0})
+    report = Report(model).generate(timing)
+    print(report["text"])
+    return report
+
+
 def run_cli(argv=None):
     parser = argparse.ArgumentParser(
         prog="hsr-infinite-cycle-calculator",
@@ -180,10 +239,18 @@ def run_cli(argv=None):
                         help="瓶颈与敏感性分析:决定性资源边/脆弱边/潜在新边(§4/§8)")
     parser.add_argument("--repair", action="store_true",
                         help="循环修复规划:达到 rho>=1 的最小单边干预(目标数族请用 --family)")
+    parser.add_argument("--library", action="store_true",
+                        help="按版本/模式矩阵库对比分析(§7 步骤 8)")
+    parser.add_argument("--report", action="store_true",
+                        help="输出完整报告:谱半径+Perron+瓶颈敏感性+时序断轴分类")
     args = parser.parse_args(argv if argv is not None else sys.argv[1:])
 
     if args.family:
         return _print_family(args.example)
+    if args.library:
+        return _print_library(args.example)
+    if args.report:
+        return _print_report(args.example)
     return _print_single(args.example, audit=args.audit,
                          sensitivity=args.sensitivity, repair=args.repair)
 

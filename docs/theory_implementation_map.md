@@ -30,6 +30,9 @@
 | §6 | 案例数值：0.88353 / 1.02442 / 1.00522..1.04432 | `examples/theory_document/*.json`（重构演示矩阵） | `tests/test_theory_examples.py` |
 | §7 | 八步复核流程 | `src/analyzer/audit.py` `CycleAudit`；全流程示例 `examples/theory_document/audit_workflow_demo.json` | `tests/test_audit.py`、`tests/test_audit_demo.py` |
 | §7 步骤 7 | 扰动测试（N/未击杀/治疗缺失/插队） | `src/analyzer/robustness.py` | `tests/test_robustness.py` |
+| §7 步骤 8 | 版本数据管理：不同版本/模式/祝福/敌方机制的 A 矩阵库 | `src/matrix/library.py` `MatrixLibrary`/`MatrixVariant` + `load_matrix_library`（`source`/`family_key`/`perturbation` 引用,可再生）；CLI `--library`；演示 `examples/theory_document/version_matrix_library.json` | `tests/test_matrix_library.py` |
+| §8 | 断轴究竟是资源问题还是时序问题 | `src/analyzer/cycle_detector.py` `CycleDetector`（资源/触发/时序三类断轴分类,消费两个引擎的结果） | `tests/test_cycle_detector.py` |
+| 全流程 | 一键汇总报告 | `src/analyzer/report.py` `Report`（谱半径+Perron+瓶颈+断轴分类）；CLI `--report` | `tests/test_report.py` |
 | §8 | 哪条边决定成败 | `TransferMatrix.edge_sensitivity`；N=2 单边缺失即翻转 regime 的审计演示 | `test_edge_sensitivity_*`、`tests/test_audit_demo.py` |
 | §1.1（模拟层） | AV=10000/速度、插入行动不消耗通常回合 | `src/simulation/speed_engine.py` `SpeedBattleEngine` | `tests/test_speed_engine.py` |
 | §5.1（模拟层） | 能量/技能点封顶 | `SpeedBattleEngine`（`energy_cap`、`sp_cap`） | `test_energy_is_capped`、`test_skill_points_are_capped` |
@@ -66,6 +69,22 @@
 
 所有修复结论沿用 §6 措辞：达到 rho>=1 只说明线性近似存在增长方向，实战仍须按 §5 四类约束
 （上限、阈值、时序、敌方行动）逐项验证。
+
+## 版本数据管理（§7 步骤 8）
+
+`python main.py examples/theory_document/version_matrix_library.json --library` 演示
+"不同版本、模式、祝福和敌方机制对应不同 A；不可把一张矩阵外推为通用结论"：
+
+- **变体注册表**：`MatrixVariant` 把一张转移矩阵与 `version/mode/blessing/enemy` 上下文标签、
+  `provenance`（实测/重构/演示来源）绑定；`MatrixLibrary.filter(version=..., mode=...)` 按标签筛选。
+- **对比与外推诊断**：`MatrixLibrary.compare()` 输出各变体的 rho/regime/不可约性对照表，并给出
+  三类警告——regime 不一致（结论上下文绑定，禁止外推）、多种事件粒度（跨粒度只能定性对比，
+  rho 不可直接排名）、未登记 provenance。
+- **可再生引用**：演示库的五个变体全部经 `source`（+`family_key`/`perturbation`）引用既有示例
+  文件而不复制数值，`tools/generate_theory_examples.py` 再生成示例后库自动保持同步。
+- **断轴分类**：`CycleDetector` 把引擎的 `break_reason` 归为资源（能量/技能点短缺、无可执行动作）、
+  触发（条件/阈值不满足）、时序（敌方插队）三类——§8"断轴究竟是资源问题还是时序问题"的直接实现；
+  `Report`（CLI `--report`）把它与谱半径、Perron、瓶颈敏感性汇总成一份完整报告。
 
 ## 重构示例的再生
 

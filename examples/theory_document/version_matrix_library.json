@@ -1,0 +1,50 @@
+{
+  "name": "版本/模式矩阵库演示 (§7 步骤 8)",
+  "source": "theory_document",
+  "section": "7",
+  "notes": "演示'不同版本、模式、祝福和敌方机制对应不同 A':四节点组内,敌方是否持续刷新击杀决定 decay/growth;七节点组内,目标数与击杀是否持续同样改变结论。所有矩阵经 source 引用既有示例文件(可再生),不另行复制数值;条目为重构演示值,非截图原值。",
+  "variants": [
+    {
+      "name": "四节点·第一组参数 (N=5)",
+      "source": "four_node_model_N5.json",
+      "version": "文档 §6 案例一",
+      "mode": "多目标环境",
+      "enemy": "5 目标,击杀不回能",
+      "provenance": "重构演示值(与文档 §6 rho 一致)"
+    },
+    {
+      "name": "四节点·加入击杀回能 (N=5)",
+      "source": "four_node_kill_energy.json",
+      "version": "文档 §6 案例二",
+      "mode": "多目标环境",
+      "enemy": "5 目标,击杀回能且持续刷新",
+      "provenance": "重构演示值(与文档 §6 rho 一致)"
+    },
+    {
+      "name": "七节点·基线 (N=2)",
+      "source": "audit_workflow_demo.json",
+      "version": "文档 §6 七节点模型",
+      "mode": "多目标环境",
+      "enemy": "2 目标,击杀持续刷新",
+      "provenance": "重构演示值(N=2 与文档 §6 rho 一致)"
+    },
+    {
+      "name": "七节点·目标数升至 N=5",
+      "source": "audit_workflow_demo.json",
+      "perturbation": "target_count_N5",
+      "version": "文档 §6 七节点模型",
+      "mode": "多目标环境",
+      "enemy": "5 目标,击杀持续刷新",
+      "provenance": "重构演示值(N=5 与文档 §6 rho 一致)"
+    },
+    {
+      "name": "七节点·击杀不持续 (N=2)",
+      "source": "audit_workflow_demo.json",
+      "perturbation": "missed_kill_TU_self",
+      "version": "文档 §6 七节点模型",
+      "mode": "多目标环境",
+      "enemy": "2 目标,一次未击杀后不刷新",
+      "provenance": "重构演示值(审计演示扰动用例)"
+    }
+  ]
+}
