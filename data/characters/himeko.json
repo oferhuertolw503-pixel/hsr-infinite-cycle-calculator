@@ -1,0 +1,16 @@
+{
+  "name": "姬子",
+  "path": "Erudition",
+  "events": [
+    {
+      "name": "follow_up_attack",
+      "energy": 10,
+      "trigger": "weakness_break"
+    },
+    {
+      "name": "ultimate",
+      "energy_cost": 120,
+      "trigger": "energy_full"
+    }
+  ]
+}
