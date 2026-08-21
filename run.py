@@ -1,13 +1,8 @@
-"""HSR Infinite Cycle Calculator entry point."""
+"""HSR Infinite Cycle Calculator entry point (alias of main.py)."""
 
-from pathlib import Path
+import sys
 
-
-def main():
-    print("HSR Infinite Cycle Calculator")
-    print("Load team configuration and start simulation.")
-    print("Analyzer pipeline: data -> events -> simulation -> report")
-
+from src.cli import run_cli
 
 if __name__ == "__main__":
-    main()
+    run_cli(sys.argv[1:])

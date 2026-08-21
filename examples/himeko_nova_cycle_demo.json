@@ -17,6 +17,6 @@
   ],
   "analysis": {
     "method": "spectral_radius",
-    "notes": "rho(A)>1 indicates possible growth direction in linear model; practical simulation is required"
+    "notes": "rho(A)=0.9643 < 1: linear model decays (theorem 1); practical simulation is required"
   }
 }
