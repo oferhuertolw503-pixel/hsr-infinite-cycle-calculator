@@ -55,6 +55,7 @@ python main.py examples/theory_document/seven_node_real_family.json --family
 python main.py examples/theory_document/four_node_kill_real_family.json --family
 python main.py examples/theory_document/audit_workflow_demo.json --audit
 python main.py examples/theory_document/audit_workflow_demo.json --report
+python main.py examples/team_simulation_demo.json --team
 ```
 
 `examples/theory_document/` 下的示例复现理论文档 §6 的谱半径数值
@@ -102,7 +103,10 @@ rho=1.02442 与文档 §4 的 α——且给出真实临界目标数：N=3 时 0
 - [x] 技能点系统接入角色数据（上限、消耗/回复）
 - [x] 追加攻击与插入行动（不消耗通常回合）
 - [x] 敌方行动约束（行动值时钟，闭环须在敌方行动前完成）
-- [ ] 完整技能/光锥/命座数据表与优先级编辑器（游戏侧数据录入）
+- [x] 完整技能/光锥/命座数据表与优先级编辑器（schema v2：
+      `data/characters/*.json` + `docs/character_data_schema.md`；
+      `PriorityEditor`/`priority_overrides` 运行时与队伍级编辑，
+      CLI `--team` 一键模拟 + §8 断轴判定）
 
 ### Phase 3: Optimization（矩阵层）✅
 
@@ -126,12 +130,13 @@ src/
   analyzer/    瓶颈敏感性（bottleneck）、修复规划与临界 N（optimizer）、
                版本矩阵库对比（library+loader）、断轴分类（cycle_detector）、
                一键报告（report）、八步审计（audit）、扰动测试（robustness）
-  simulation/  离散时序引擎（timed_engine, speed_engine, engine）
+  simulation/  离散时序引擎（timed_engine, speed_engine, priority）
   battle/      行动值/战斗状态（legacy 骨架）
-  data_loader/ 角色与矩阵示例加载
+  data_loader/ 角色与矩阵示例加载（含角色 schema 校验）
   cli.py       命令行入口
-examples/      示例（含 theory_document/ 文档案例复现）
-data/          角色数据（含 speed 字段）
+examples/      示例（含 theory_document/ 文档案例复现与队伍模拟）
+data/          角色数据（schema v2：技能/光锥/命座/优先级，
+               见 docs/character_data_schema.md）
 tools/         示例生成脚本
 docs/          架构、理论映射文档与示例图
 ```

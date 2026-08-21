@@ -1,24 +1,45 @@
 {
   "id": "march7th_hunt",
-  "name": "March 7th (The Hunt)",
+  "name": "三月七·巡猎",
   "path": "The Hunt",
   "element": "Imaginary",
+  "rarity": 5,
   "speed": 102,
-  "events": {
-    "basic_attack": {
+  "max_energy": 120,
+  "skills": [
+    {
+      "name": "basic_attack",
+      "type": "basic",
       "energy_gain": 20,
-      "skill_points": 1
+      "skill_points": 1,
+      "priority": 2
     },
-    "enhanced_basic": {
+    {
+      "name": "enhanced_basic",
+      "type": "basic",
       "energy_gain": 30,
-      "skill_points": 0
+      "skill_points": 0,
+      "priority": 1
     },
-    "skill": {
+    {
+      "name": "skill",
+      "type": "skill",
       "energy_gain": 30,
-      "skill_points": -1
+      "skill_points": -1,
+      "priority": 0
     },
-    "ultimate": {
-      "energy_cost": 120
+    {
+      "name": "ultimate",
+      "type": "ultimate",
+      "energy_cost": 120,
+      "trigger": "energy_full"
     }
-  }
+  ],
+  "eidolons": [
+    {
+      "rank": 1,
+      "effects": [{"kind": "speed_delta", "value": 4}]
+    }
+  ],
+  "notes": "v2 数据表(由旧 events 格式升级,数值不变)。E1 速度+4 演示命座效果。数值为演示量级,以游戏内为准。"
 }

@@ -37,6 +37,7 @@
 | §1.1（模拟层） | AV=10000/速度、插入行动不消耗通常回合 | `src/simulation/speed_engine.py` `SpeedBattleEngine` | `tests/test_speed_engine.py` |
 | §5.1（模拟层） | 能量/技能点封顶 | `SpeedBattleEngine`（`energy_cap`、`sp_cap`） | `test_energy_is_capped`、`test_skill_points_are_capped` |
 | §5.2（模拟层） | "能量满才开大"阈值 → 可执行动作集随状态改变 | `SpeedBattleEngine` 的大招阈值触发（插入动作） | `test_ultimate_fires_at_threshold_*` |
+| §5.3（数据层） | 优先级/可执行性编辑:排轴可配置并持久化 | 角色数据 schema v2（`data/characters/`、`docs/character_data_schema.md`、`validate_character`）+ `ActionSpec.priority/enabled` + `PriorityEditor`/`priority_overrides`；CLI `--team` | `tests/test_character_schema.py`、`tests/test_priority.py` |
 | 可视化 | Phase 1 矩阵可视化 | `src/matrix/visualization.py`（heatmap / 有向图 / rho 曲线） | `tests/test_visualization.py`；示例图见 `docs/figures/` |
 
 ## 关键数值复现
@@ -117,6 +118,8 @@
 - AV = 10000 / 速度（§1.1），行动值最小的单位先行动；
 - 能量/技能点封顶（§5.1）；"能量满才开大"作为状态阈值触发插入动作，且插入动作**不消耗通常回合**（§5.2/§1.1）；
 - 敌方行动值归零即插队打断闭环（§5.4），闭环须在敌方行动前完成；
-- 角色数据（`data/characters/*.json`，已含 `speed` 字段）经 `unit_from_character_data` 直接构建单位。
+- 角色数据（`data/characters/*.json`，schema v2：技能/光锥/命座/优先级）经 `unit_from_character_data` 直接构建单位，
+  `validate_character` 在加载时校验；`python main.py examples/team_simulation_demo.json --team`
+  按队伍文件（含 `priority_overrides`）运行并给出 §8 断轴判定。
 
 示例图（`docs/figures/`）：`four_node_heatmap.png`、`four_node_digraph.png`、`seven_node_family_rho.png`。

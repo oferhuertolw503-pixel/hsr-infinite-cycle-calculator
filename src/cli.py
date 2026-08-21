@@ -19,8 +19,10 @@ import sys
 
 from .analyzer.audit import CycleAudit
 from .analyzer.bottleneck import BottleneckAnalyzer
+from .analyzer.cycle_detector import CycleDetector
 from .analyzer.optimizer import CycleRepairPlanner, critical_parameter
 from .analyzer.report import Report
+from .data_loader.character_loader import load_character_validated
 from .data_loader.matrix_loader import (
     load_example_json,
     load_family,
@@ -28,6 +30,8 @@ from .data_loader.matrix_loader import (
     load_transfer_matrix,
 )
 from .matrix.transfer_matrix import TransferMatrix
+from .simulation.priority import PriorityEditor, apply_priority_overrides
+from .simulation.speed_engine import SpeedBattleEngine, unit_from_character_data
 from .simulation.timed_engine import TimedBattleEngine, TimedEvent
 
 
@@ -225,6 +229,55 @@ def _print_report(path):
     return report
 
 
+def _print_team(path):
+    data = load_example_json(path)
+    character_paths = data.get("characters") or data.get("team")
+    if not character_paths:
+        raise ValueError(f"{path} needs a 'characters' (or legacy 'team') list")
+    units = [
+        unit_from_character_data(load_character_validated(character_path))
+        for character_path in character_paths
+    ]
+    overrides = data.get("priority_overrides")
+    if overrides:
+        apply_priority_overrides(units, overrides)
+
+    sim = data.get("simulation", {})
+    engine = SpeedBattleEngine(
+        units,
+        enemy_speed=float(data.get("enemy_speed", 132.0)),
+        max_rounds=int(sim.get("turns", sim.get("max_rounds", 1000))),
+    )
+    result = engine.run(
+        initial_energy=float(sim.get("initial_energy", 0.0)),
+        initial_sp=float(sim.get("initial_skill_points", 3.0)),
+    )
+    cycle = CycleDetector().analyze(result)
+
+    print("=" * 60)
+    print("HSR 永动机队伍模拟 (SpeedBattleEngine, 游戏侧数据)")
+    print("=" * 60)
+    print("队伍:", ", ".join(
+        f"{u.name}(速度 {u.speed:g})" for u in units))
+    print(f"敌方速度: {engine.enemy_speed:g}  上限轮数: {engine.max_rounds}")
+    print("\n动作优先级表 (数值越小越先出手):")
+    for row in PriorityEditor(units).view():
+        status = "启用" if row["enabled"] else "禁用"
+        kind = "插入" if row["inserted"] else "通常"
+        print(f"  {row['unit']:>10s}  {row['action']:<18s} "
+              f"priority={row['priority']:g}  {kind}  {status}")
+    print(f"\n模拟结果: rounds={result['rounds']} "
+          f"cycles={result['cycles_completed']} "
+          f"enemy_actions={result['enemy_actions']} "
+          f"break={result['break_reason']}")
+    for name, count in result["ult_count"].items():
+        print(f"  {name:>10s} 终结技次数: {count}")
+    print(f"\n断轴判定(§8): stable={cycle['stable']} "
+          f"类别={cycle['break_class']}")
+    print(" ", cycle["note"])
+    return {"result": result, "cycle": cycle}
+
+
 def run_cli(argv=None):
     parser = argparse.ArgumentParser(
         prog="hsr-infinite-cycle-calculator",
@@ -243,6 +296,8 @@ def run_cli(argv=None):
                         help="按版本/模式矩阵库对比分析(§7 步骤 8)")
     parser.add_argument("--report", action="store_true",
                         help="输出完整报告:谱半径+Perron+瓶颈敏感性+时序断轴分类")
+    parser.add_argument("--team", action="store_true",
+                        help="按队伍 JSON 运行速度引擎(角色数据+优先级编辑+断轴分类)")
     args = parser.parse_args(argv if argv is not None else sys.argv[1:])
 
     if args.family:
@@ -251,6 +306,8 @@ def run_cli(argv=None):
         return _print_library(args.example)
     if args.report:
         return _print_report(args.example)
+    if args.team:
+        return _print_team(args.example)
     return _print_single(args.example, audit=args.audit,
                          sensitivity=args.sensitivity, repair=args.repair)
 

@@ -1,17 +1,47 @@
 {
+  "id": "himeko",
   "name": "姬子",
   "path": "Erudition",
+  "element": "Fire",
+  "rarity": 5,
   "speed": 96,
-  "events": [
+  "max_energy": 120,
+  "skills": [
     {
-      "name": "follow_up_attack",
-      "energy": 10,
-      "trigger": "weakness_break"
+      "name": "basic_attack",
+      "type": "basic",
+      "energy_gain": 20,
+      "skill_points": 1,
+      "priority": 2
+    },
+    {
+      "name": "skill",
+      "type": "skill",
+      "energy_gain": 30,
+      "skill_points": -1,
+      "priority": 0
     },
     {
       "name": "ultimate",
+      "type": "ultimate",
       "energy_cost": 120,
       "trigger": "energy_full"
+    },
+    {
+      "name": "follow_up_attack",
+      "type": "talent",
+      "energy_gain": 10,
+      "inserted": true,
+      "trigger": "weakness_break"
     }
-  ]
+  ],
+  "light_cone": {
+    "name": "早餐的仪式感",
+    "superimposition": 1,
+    "effects": [
+      {"kind": "energy_regen_percent", "value": 0.05,
+       "action_types": ["basic", "skill", "talent"]}
+    ]
+  },
+  "notes": "v2 数据表。终结技 120 能量阈值触发(§5.2);天赋追击为插入行动(§1.1,不消耗通常回合)。数值为演示量级,以游戏内为准。"
 }

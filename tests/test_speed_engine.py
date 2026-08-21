@@ -119,11 +119,16 @@ def test_fast_team_closes_cycle_before_enemy():
 # -- character data wiring -------------------------------------------------------
 def test_character_data_builder_march7th():
     unit = _march7th_unit()
-    assert unit.speed == pytest.approx(102.0)
+    # base 102 plus the E1 eidolon speed_delta(+4) from the data file
+    assert unit.speed == pytest.approx(106.0)
     assert unit.ult_cost == pytest.approx(120.0)
     names = [a.name for a in unit.actions]
     assert "basic_attack" in names and "skill" in names and "enhanced_basic" in names
     assert "ultimate" not in names  # ult is the threshold action, not standard
+
+    data = load_character(DATA / "march7th_hunt.json")
+    bare = unit_from_character_data({**data, "eidolons": []})
+    assert bare.speed == pytest.approx(102.0)
 
 
 def test_march7th_rotation_sustains_energy():
@@ -131,7 +136,7 @@ def test_march7th_rotation_sustains_energy():
     engine = SpeedBattleEngine([unit], enemy_speed=60)
     result = engine.run()
     # basic(20) + skill(30) per cycle with SP refunds keeps energy positive
-    assert result["final"]["March 7th (The Hunt)"]["energy"] >= 0
+    assert result["final"][unit.name]["energy"] >= 0
     assert result["break_reason"] in ("enemy_interjection", None)
 
 

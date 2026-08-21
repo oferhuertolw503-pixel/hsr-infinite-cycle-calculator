@@ -1,0 +1,39 @@
+{
+  "id": "tribbie",
+  "name": "缇宝",
+  "path": "Harmony",
+  "element": "Quantum",
+  "rarity": 5,
+  "speed": 96,
+  "max_energy": 120,
+  "skills": [
+    {
+      "name": "basic_attack",
+      "type": "basic",
+      "energy_gain": 20,
+      "skill_points": 1,
+      "priority": 2
+    },
+    {
+      "name": "skill",
+      "type": "skill",
+      "energy_gain": 30,
+      "skill_points": -1,
+      "priority": 0
+    },
+    {
+      "name": "ultimate",
+      "type": "ultimate",
+      "energy_cost": 120,
+      "trigger": "energy_full"
+    },
+    {
+      "name": "talent_bonus_damage",
+      "type": "talent",
+      "energy_gain": 5,
+      "inserted": true,
+      "trigger": "ally_ultimate"
+    }
+  ],
+  "notes": "演示骨架:对应七节点模型中的 T/T_U 节点(矩阵族中 N 进入 T_U 行转移)。数值为演示量级,以游戏内为准。"
+}

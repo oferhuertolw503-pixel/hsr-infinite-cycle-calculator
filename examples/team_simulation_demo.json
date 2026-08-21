@@ -1,15 +1,19 @@
 {
-  "team": [
-    "data/characters/march7th_hunt.json"
+  "name": "队伍模拟演示 (游戏侧数据 v2)",
+  "characters": [
+    "data/characters/himeko.json",
+    "data/characters/march7th_hunt.json",
+    "data/characters/tribbie.json"
   ],
+  "enemy_speed": 96,
+  "priority_overrides": {
+    "姬子": {"skill": {"enabled": false}},
+    "缇宝": {"skill": {"enabled": false}}
+  },
   "simulation": {
-    "turns": 100,
+    "turns": 300,
     "initial_energy": 0,
     "initial_skill_points": 3
   },
-  "analysis": {
-    "matrix": true,
-    "simulation": true,
-    "report": true
-  }
+  "notes": "演示优先级编辑:关闭姬子/缇宝的战技(改为普攻回点)后,三人能量循环能否在敌方(速度96,与我方低速位同速)行动前维持;断轴类别由 CycleDetector 判定(§8)。角色数值为演示量级,以游戏内为准。"
 }

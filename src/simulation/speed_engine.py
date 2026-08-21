@@ -23,12 +23,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .priority import apply_priority_overrides
+
 AV_BASE = 10000.0
 
 
 @dataclass
 class ActionSpec:
-    """One executable action of an ally unit."""
+    """One executable action of an ally unit.
+
+    `priority` orders the standard-action choice: among executable
+    non-inserted actions the smallest priority wins, ties broken by
+    declaration order (which is also the default priority, so data
+    files that set no priorities keep their written order).
+    """
 
     name: str
     energy_gain: float = 0.0
@@ -36,6 +44,8 @@ class ActionSpec:
     sp_gain: float = 0.0
     sp_cost: float = 0.0
     inserted: bool = False        # does not consume the standard turn
+    priority: float = 0.0
+    enabled: bool = True
     condition: callable = None    # predicate(unit, team) -> bool
 
     def __post_init__(self):
@@ -44,7 +54,8 @@ class ActionSpec:
 
     def executable(self, unit, team):
         return (
-            unit.energy + 1e-9 >= self.energy_cost
+            self.enabled
+            and unit.energy + 1e-9 >= self.energy_cost
             and team["sp"] + 1e-9 >= self.sp_cost
             and self.condition(unit, team)
         )
@@ -194,11 +205,16 @@ class SpeedBattleEngine:
         }
 
     def _choose_standard_action(self, unit, team):
-        # standard (non-inserted) actions in declaration order
-        for action in unit.actions:
-            if not action.inserted and action.executable(unit, team):
-                return action
-        return None
+        # executable standard (non-inserted) actions, smallest priority
+        # first, ties broken by declaration order
+        candidates = [
+            (index, action)
+            for index, action in enumerate(unit.actions)
+            if not action.inserted and action.executable(unit, team)
+        ]
+        if not candidates:
+            return None
+        return min(candidates, key=lambda pair: (pair[1].priority, pair[0]))[1]
 
     def _apply(self, action, unit, team):
         unit.add_energy(action.energy_gain)
@@ -206,34 +222,94 @@ class SpeedBattleEngine:
         team["sp"] = min(self.sp_cap, max(0.0, team["sp"] + action.sp_gain - action.sp_cost))
 
 
-def unit_from_character_data(data, speed=None, energy_cap=120.0):
-    """Build a BattleUnit from a character JSON dict.
+def unit_from_character_data(data, speed=None, energy_cap=None,
+                             priority_overrides=None):
+    """Build a BattleUnit from a character JSON dict (schema v2).
 
-    Events with an energy_cost are treated as the ultimate (threshold
-    action, section 5.2); everything else becomes a standard action.
+    v2 fields: `skills` (ordered list with priority / inserted / type),
+    `max_energy`, `light_cone` and `eidolons` with declarative effects
+    (speed_delta, initial_energy, energy_regen_percent, grant_action).
+    The legacy `events` dict/list keeps working unchanged.
+
+    `priority_overrides` maps action name -> priority (or
+    {"priority": p, "enabled": bool}) and is applied last, so team files
+    can edit priorities without touching the character tables.
     """
-    events = data.get("events", {})
-    if isinstance(events, list):
-        events = {e["name"]: e for e in events}
+    skills = data.get("skills")
+    if skills is None:
+        events = data.get("events", {})
+        if isinstance(events, list):
+            events = {e["name"]: e for e in events}
+        skills = [dict(spec, name=name) for name, spec in events.items()]
+
+    if energy_cap is None:
+        energy_cap = float(data.get("max_energy", 120.0))
     speed = float(speed if speed is not None else data.get("speed", 100.0))
     ult_cost = energy_cap
     actions = []
-    for name, spec in events.items():
+    for index, spec in enumerate(skills):
         cost = float(spec.get("energy_cost", 0.0))
         if cost > 0:
             ult_cost = cost
             continue
         sp = float(spec.get("skill_points", spec.get("sp_change", 0.0)))
         actions.append(ActionSpec(
-            name=name,
+            name=spec["name"],
             energy_gain=float(spec.get("energy_gain", spec.get("energy", 0.0))),
             sp_gain=max(sp, 0.0),
             sp_cost=max(-sp, 0.0),
+            inserted=bool(spec.get("inserted", False)),
+            priority=float(spec.get("priority", index)),
         ))
-    return BattleUnit(
+
+    effects = list((data.get("light_cone") or {}).get("effects") or [])
+    for eidolon in data.get("eidolons") or []:
+        effects.extend(eidolon.get("effects") or [])
+
+    initial_energy = 0.0
+    for effect in effects:
+        kind = effect.get("kind")
+        value = float(effect.get("value", 0.0))
+        if kind == "speed_delta":
+            speed = max(1.0, speed + value)
+        elif kind == "initial_energy":
+            initial_energy += value
+        elif kind == "energy_regen_percent":
+            targets = effect.get("action_types")
+            for action in actions:
+                if targets is None or _action_type_of(skills, action.name) in targets:
+                    action.energy_gain *= 1.0 + value
+        elif kind == "grant_action":
+            actions.append(_action_from_effect(effect["action"], len(actions)))
+        # unknown kinds are rejected by validate_character at load time
+
+    unit = BattleUnit(
         name=data.get("name", data.get("id", "unit")),
         speed=speed,
         energy_cap=energy_cap,
         ult_cost=ult_cost,
         actions=actions,
+    )
+    unit.energy = min(initial_energy, energy_cap)
+    if priority_overrides:
+        apply_priority_overrides([unit], priority_overrides)
+    return unit
+
+
+def _action_type_of(skills, action_name):
+    for spec in skills:
+        if spec.get("name") == action_name:
+            return spec.get("type")
+    return None
+
+
+def _action_from_effect(spec, index):
+    sp = float(spec.get("skill_points", spec.get("sp_change", 0.0)))
+    return ActionSpec(
+        name=spec["name"],
+        energy_gain=float(spec.get("energy_gain", 0.0)),
+        sp_gain=max(sp, 0.0),
+        sp_cost=max(-sp, 0.0),
+        inserted=bool(spec.get("inserted", True)),
+        priority=float(spec.get("priority", index)),
     )

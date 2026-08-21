@@ -1,0 +1,39 @@
+{
+  "id": "luocha",
+  "name": "罗刹",
+  "path": "Abundance",
+  "element": "Imaginary",
+  "rarity": 5,
+  "speed": 101,
+  "max_energy": 90,
+  "skills": [
+    {
+      "name": "basic_attack",
+      "type": "basic",
+      "energy_gain": 20,
+      "skill_points": 1,
+      "priority": 2
+    },
+    {
+      "name": "skill",
+      "type": "skill",
+      "energy_gain": 30,
+      "skill_points": -1,
+      "priority": 0
+    },
+    {
+      "name": "ultimate",
+      "type": "ultimate",
+      "energy_cost": 90,
+      "trigger": "energy_full"
+    },
+    {
+      "name": "field_sp_gain",
+      "type": "talent",
+      "skill_points": 1,
+      "inserted": true,
+      "trigger": "field_active_turn"
+    }
+  ],
+  "notes": "演示骨架:对应四节点截图说明中的'罗刹 field:每回合给 1 SP'(talent 插入行动回复技能点)。数值为演示量级,以游戏内为准。"
+}
