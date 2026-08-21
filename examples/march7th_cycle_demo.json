@@ -1,0 +1,12 @@
+{
+  "team": ["march7th_hunt"],
+  "simulation": {
+    "turns": 100,
+    "initial_energy": 0,
+    "initial_skill_points": 3
+  },
+  "analysis": {
+    "matrix_check": true,
+    "simulate_real_constraints": true
+  }
+}
