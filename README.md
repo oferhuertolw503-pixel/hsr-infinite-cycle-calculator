@@ -140,7 +140,8 @@ src/
                八步审计（audit）、扰动测试（robustness）
   simulation/  离散时序引擎（timed_engine, speed_engine, priority）
   data_loader/ 角色与矩阵示例加载（含角色 schema 校验）
-  cli.py       命令行入口
+  cli.py       命令行参数解析与路由
+  cli_handlers.py  各分析模式的调用与终端展示
 examples/      示例（含 theory_document/ 文档案例复现与队伍模拟）
 data/          角色数据（schema v2：技能/光锥/命座/优先级，
                见 docs/character_data_schema.md）
