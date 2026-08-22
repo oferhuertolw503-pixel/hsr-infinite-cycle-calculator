@@ -210,8 +210,6 @@ class TransferMatrix:
                 f"沿 Perron 方向资源约每 {doubling:.3g} 轮翻倍(定理 3)。"
                 "这只能推出存在增长方向,不能单独推出实战无限循环。"
             )
-            caveats.append("需逐项复核:资源上限、触发阈值、离散时序、敌方行动。")
-
         if not irreducible:
             caveats.append(
                 "A 不可约性不成立,严格正 Perron 向量的定理前提缺失;"

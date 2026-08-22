@@ -151,7 +151,7 @@ docs/          架构、理论映射文档与示例图
 
 ## 开发
 
-Python >= 3.10，依赖见 `requirements.txt`（numpy / scipy / matplotlib / pandas）。
+Python >= 3.10，依赖见 `requirements.txt`（numpy / matplotlib）。
 
 推荐使用 `python -m src <示例>` 作为统一入口；`python main.py` 继续保留为
 兼容入口。

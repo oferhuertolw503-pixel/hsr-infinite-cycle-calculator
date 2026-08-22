@@ -113,6 +113,11 @@ def test_classify_growth():
     # growth must not be presented as a practical infinite loop
     assert "不能单独推出实战无限循环" in result["conclusion"]
     assert any("上限" in c for c in result["caveats"])
+    practical_caveats = [
+        caveat for caveat in result["caveats"]
+        if "上限" in caveat and "时序" in caveat and "敌方行动" in caveat
+    ]
+    assert len(practical_caveats) == 1
 
 
 def test_classify_complex_dominant():
