@@ -1,6 +1,7 @@
 """Matrix library tests (theory section 7, step 8: version data)."""
 
 import json
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -11,6 +12,17 @@ from src.matrix.library import MatrixLibrary, MatrixVariant
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples" / "theory_document"
 LIBRARY = EXAMPLES / "version_matrix_library.json"
+
+# pytest's tmp_path points at the system temp dir, which the file sandbox
+# denies in some environments; a workspace-relative dir works everywhere.
+TMP_DIR = Path(__file__).resolve().parent / ".tmp_library"
+
+
+@pytest.fixture
+def library_file():
+    TMP_DIR.mkdir(exist_ok=True)
+    yield TMP_DIR
+    shutil.rmtree(TMP_DIR, ignore_errors=True)
 
 
 def _two_variant_library():
@@ -66,12 +78,12 @@ def test_library_validation():
         ])
 
 
-def test_loader_rejects_empty_library(tmp_path):
-    library_file = tmp_path / "lib.json"
-    library_file.write_text(json.dumps({"name": "empty", "variants": []}),
-                            encoding="utf-8")
+def test_loader_rejects_empty_library(library_file):
+    path = library_file / "lib.json"
+    path.write_text(json.dumps({"name": "empty", "variants": []}),
+                    encoding="utf-8")
     with pytest.raises(ValueError, match="declares no variants"):
-        load_matrix_library(library_file)
+        load_matrix_library(path)
 
 
 def test_undocumented_variants_are_flagged():
@@ -116,9 +128,9 @@ def test_demo_library_perturbation_reference_values():
     assert missed.model.classify()["regime"] == "decay"
 
 
-def test_loader_family_key_reference(tmp_path):
-    library_file = tmp_path / "lib.json"
-    library_file.write_text(json.dumps({
+def test_loader_family_key_reference(library_file):
+    path = library_file / "lib.json"
+    path.write_text(json.dumps({
         "name": "family ref",
         "variants": [{
             "name": "N=5 via family_key",
@@ -126,20 +138,20 @@ def test_loader_family_key_reference(tmp_path):
             "family_key": "5",
         }],
     }), encoding="utf-8")
-    library = load_matrix_library(library_file)
+    library = load_matrix_library(path)
     assert np.isclose(
         library.variants[0].model.spectral_radius(), 1.04432, atol=2e-5
     )
 
 
-def test_loader_rejects_variant_without_matrix_or_source(tmp_path):
-    library_file = tmp_path / "lib.json"
-    library_file.write_text(json.dumps({
+def test_loader_rejects_variant_without_matrix_or_source(library_file):
+    path = library_file / "lib.json"
+    path.write_text(json.dumps({
         "name": "bad",
         "variants": [{"name": "nothing"}],
     }), encoding="utf-8")
     with pytest.raises(ValueError, match="matrix.*source"):
-        load_matrix_library(library_file)
+        load_matrix_library(path)
 
 
 def test_loader_rejects_non_library_file():

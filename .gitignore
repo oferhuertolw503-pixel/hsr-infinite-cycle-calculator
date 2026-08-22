@@ -9,6 +9,9 @@ pytest-cache-*/
 Thumbs.db
 .DS_Store
 
+# Raw screenshot uploads (样例/): archived byte-identical under docs/screenshots/
+样例/
+
 # Editors
 .idea/
 .vscode/
