@@ -36,12 +36,14 @@ def test_minimal_boosts_reach_target_exactly():
         assert row["new_value"] > row["value"]
 
 
-def test_best_repair_matches_decisive_edge():
-    # First-order: the needed boost is (1 - rho) / (u_i v_j a_ij), so
-    # the cheapest single intervention sits on the decisive edge.
+def test_best_repair_on_most_fragile_self_loop():
+    # First-order: the needed boost is (1 - rho) / (u_i v_j a_ij).  The
+    # cheapest single intervention lands on the H_U self-loop (the most
+    # fragile edge, section 4/8), not necessarily on the highest-elasticity
+    # edge (C -> H_U) once nonlinearity is accounted for.
     plan = CycleRepairPlanner(_four_node()).plan(target_rho=1.0)
     best = plan["best"]
-    assert (best["from"], best["to"]) == ("B", "B")
+    assert (best["from"], best["to"]) == ("H_U", "H_U")
     assert best["kind"] == "boost"
     # The bisection result agrees with the elasticity estimate.
     assert np.isclose(best["added"], best["first_order_added"], rtol=0.15)

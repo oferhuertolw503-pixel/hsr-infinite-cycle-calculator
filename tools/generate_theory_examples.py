@@ -1,16 +1,20 @@
 """Regenerate the theory-document example matrices.
 
 The theory document (section 6) records spectral radii for three model
-families but not the raw matrices.  These generators construct
-demonstrative matrices whose rho matches the documented values so the
-tooling can reproduce the section-6 numbers:
+families but not the raw matrices.  These generators construct matrices
+whose rho matches the documented values:
 
-  * four_node_model_N5.json     rho = 0.88353   (first parameter set, N=5)
-  * four_node_kill_energy.json  rho = 1.02442   (adjusted + kill energy)
+  * four_node_model_N5.json     rho = 0.88856  (stage-1 screenshot matrix)
+  * four_node_kill_energy.json  rho = 1.02442  (adjusted + kill energy)
   * seven_node_family.json      rho(N=2..5) = 1.00522 .. 1.04432
 
-The matrix ENTRIES are demonstrative values, not the entries from the
-original screenshots.  Run from the repository root:
+NOTE: the theory document §6 annotates stage-1 N=5 with 0.88353, but
+the stage-1 SCREENSHOT matrix computes rho = 0.88856 (see
+docs/case_study_yangli.md §4).  Per user confirmation the screenshot
+matrix is authoritative: four_node_model_N5.json now carries the
+screenshot matrix and keeps the doc annotation under documented_rho_doc.
+
+Run from the repository root:
 
     python tools/generate_theory_examples.py
 """
@@ -22,11 +26,12 @@ import numpy as np
 
 OUT_DIR = Path(__file__).resolve().parent.parent / "examples" / "theory_document"
 
-# -- documented values (theory document section 6) ------------------------
-RHO_N5 = 0.88353          # first parameter set, N=5
-RHO_KILL_ENERGY = 1.02442  # adjusted transfers + kill energy
-RHO_SEVEN_N2 = 1.00522     # seven-node model, N=2
-RHO_SEVEN_N5 = 1.04432     # seven-node model, N=5
+# -- documented values -------------------------------------------------------
+RHO_N5 = 0.88353            # theory doc §6 annotation for stage-1 N=5
+RHO_SCREENSHOT_N5 = 0.88856  # stage-1 screenshot matrix computed rho (authoritative)
+RHO_KILL_ENERGY = 1.02442    # adjusted transfers + kill energy
+RHO_SEVEN_N2 = 1.00522       # seven-node model, N=2
+RHO_SEVEN_N5 = 1.04432       # seven-node model, N=5
 PERRON_FOUR = np.array([0.304637, 0.832597, 0.202899, 0.415706])
 
 SEVEN_NODES = ["H", "H_U", "C", "M", "C_U", "T", "T_U"]
@@ -109,6 +114,29 @@ def four_node_kill_real(N):
     return A
 
 
+def four_node_decay_screenshot():
+    """Stage-1 four-node screenshot matrix (H/H_U/C/M), N=5.
+
+    Back-solved from the screenshot's Perron vector w = (0.207, 0.542,
+    0.091, 0.161) at rho = 0.88856: rho(A*) = 0.88855 reproduces the
+    recorded 0.88856 (w is rounded to 3 decimals), and changing the
+    ambiguous cell H_U -> M from 1/5 to 1/4 raises rho to 0.89640,
+    matching the recorded alternative reading 0.89622.  The H_U row
+    [3/5, 3/5, 0, 1/5] matches the seven-node family, and the M row
+    back-solves uniquely to [1/12, 1/20, 1/5, 1/2].
+
+    The theory document §6 records 0.88353 for "第一组参数 N=5" -- an
+    annotation that does NOT match the screenshot matrix; per user
+    confirmation the screenshot matrix is authoritative.
+    """
+    A = np.zeros((4, 4))
+    A[0] = [1 / 10, 1 / 5, 30 / 97.5, 1 / 6]     # H
+    A[1] = [3 / 5, 3 / 5, 0, 1 / 5]              # H_U
+    A[2] = [0, 1 / 20, 1 / 2, 5 / 97.5]          # C
+    A[3] = [1 / 12, 1 / 20, 1 / 5, 1 / 2]        # M
+    return A
+
+
 def build_seven_family():
     """N enters the T_U-related transfers (theory 5.2): more targets -> more
     军功 (M) and more self energy for 缇宝大招.  N=2 matches the documented
@@ -138,20 +166,24 @@ def build_seven_family():
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # -- four-node model, N=5 ------------------------------------------------
-    a_n5 = rank_one_matrix(RHO_N5, PERRON_FOUR)
+    # -- four-node stage-1 screenshot matrix, N=5 ----------------------------
+    a_n5 = four_node_decay_screenshot()
     four_n5 = {
-        "name": "四节点简化模型 (第一组参数, N=5)",
-        "source": "theory_document",
-        "section": "4, 6",
-        "nodes": ["A", "B", "C", "D"],
+        "name": "四节点截图矩阵 (阶段一初版, N=5)",
+        "source": "screenshot",
+        "section": "6",
+        "nodes": ["H", "H_U", "C", "M"],
         "matrix": round_matrix(a_n5),
-        "documented_rho": RHO_N5,
-        "documented_perron": [float(x) for x in PERRON_FOUR],
-        "tolerance": 1e-5,
+        "documented_rho": RHO_SCREENSHOT_N5,
+        "documented_rho_doc": RHO_N5,
+        "documented_perron": [0.207, 0.542, 0.091, 0.161],
+        "tolerance": 1e-4,
         "notes": (
-            "演示矩阵,谱半径与文档 §6 一致(0.88353 < 1 => 线性衰减)。"
-            "Perron 向量与文档 §4 的 alpha 成比例。条目为重构值,非截图原值。"
+            "截图矩阵(用户确认以截图为准):由截图 Perron 向量 "
+            "(0.207,0.542,0.091,0.161) 与 rho=0.88856 反解恢复,"
+            "rho(A*)=0.88855;歧义单元格 H_U->M 读 1/5(读 1/4 得 0.89640)。"
+            "文档 §6 标注 0.88353 与该矩阵不符,保留于 documented_rho_doc "
+            "供对照;以截图矩阵为准。条目为反解恢复值,分数形式待原图核对。"
         ),
     }
     (OUT_DIR / "four_node_model_N5.json").write_text(

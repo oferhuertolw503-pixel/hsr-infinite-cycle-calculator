@@ -104,18 +104,19 @@ def test_demo_library_loads_all_variants():
     assert len(comparison["rows"]) == 9
     assert comparison["regimes"] == ["decay", "growth"]
     assert comparison["consensus"] is False
-    # Three granularities: four-node recon (A/B/C/D), seven-node, and the
+    # Four granularities: four-node kill recon (A/B/C/D), stage-1
+    # screenshot (H/H_U/C/M), seven-node (H/H_U/C/M/C_U/T/T_U), and the
     # real four-node kill model (H/H_U/T/T_U).
-    assert len(comparison["node_groups"]) == 3
+    assert len(comparison["node_groups"]) == 4
     # Source references keep the documented rho values in sync.
     documented = [r for r in comparison["rows"] if "matches_documented" in r]
     assert {round(r["rho"], 5) for r in documented} == {
-        0.88353, 1.02442, 1.00522, 1.04432
+        0.88855, 1.02442, 1.00522, 1.04432
     }
     assert all(r["matches_documented"] for r in documented)
-    # Real matrices carry 实测 provenance.
+    # Real matrices carry 实测 provenance (stage-1 screenshot + real families).
     real = [r for r in comparison["rows"] if "实测" in str(r["provenance"])]
-    assert len(real) == 4
+    assert len(real) == 5
 
 
 def test_demo_library_perturbation_reference_values():

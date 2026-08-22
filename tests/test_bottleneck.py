@@ -29,18 +29,17 @@ def _audit_demo():
 def test_elasticity_matches_finite_differences():
     analysis = BottleneckAnalyzer(_four_node()).analyze()
     assert analysis["analytic"] is True
-    # The rank-1 reconstruction is smooth: central differences should
-    # agree with the Karlin formula to high accuracy.
+    # The dominant root is real and simple: the Karlin formula
+    # u_i v_j / (u^T v) agrees with central differences to ~1e-7.
     assert analysis["max_relative_error"] < 1e-6
 
 
 def test_decisive_edge_maximizes_perron_product():
-    # The four-node example is symmetric, so u = v and the elasticity
-    # u_i v_j / (u^T v) = v_i v_j / (v^T v) is maximal on (B, B)
-    # because B carries the largest Perron frequency.
+    # The screenshot matrix is not symmetric, so u != v; the decisive
+    # edge is C -> H_U (largest u_i * v_j product / u^T v).
     analysis = BottleneckAnalyzer(_four_node()).analyze()
     top = analysis["decisive_edges"][0]
-    assert (top["from"], top["to"]) == ("B", "B")
+    assert (top["from"], top["to"]) == ("C", "H_U")
     elasticities = [row["d_rho"] for row in analysis["decisive_edges"]]
     assert top["d_rho"] == max(elasticities)
 
@@ -49,9 +48,9 @@ def test_scarce_node_is_smallest_perron_frequency():
     analysis = BottleneckAnalyzer(_four_node()).analyze()
     scarce = analysis["scarce_node"]
     assert scarce["node"] == "C"
-    # Documented Perron vector (0.304637, 0.832597, 0.202899, 0.415706)
-    # normalized to sum 1 gives C the smallest share ~0.1156.
-    assert np.isclose(scarce["frequency"], 0.115557, atol=1e-4)
+    # Screenshot Perron vector (0.207, 0.542, 0.091, 0.161) normalized
+    # to sum 1 gives C the smallest share ~0.0909.
+    assert np.isclose(scarce["frequency"], 0.090905, atol=1e-4)
 
 
 def test_fragile_edges_report_removal_impact():
@@ -61,9 +60,9 @@ def test_fragile_edges_report_removal_impact():
         assert row["load_bearing"] is True
         assert row["drop_rho"] < rho
         assert np.isclose(row["drop_delta"], row["drop_rho"] - rho)
-    # The strongest edge is also the most fragile one here.
+    # Removing the H_U self-loop drops rho the most (0.8886 -> 0.7124).
     fragile_top = analysis["fragile_edges"][0]
-    assert (fragile_top["from"], fragile_top["to"]) == ("B", "B")
+    assert (fragile_top["from"], fragile_top["to"]) == ("H_U", "H_U")
 
 
 def test_audit_demo_missed_kill_edge_is_load_bearing():

@@ -12,9 +12,12 @@ EXAMPLES = Path(__file__).resolve().parent.parent / "examples" / "theory_documen
 
 def test_four_node_model_n5_matches_documented_rho():
     data = load_transfer_matrix(EXAMPLES / "four_node_model_N5.json")
-    # section 6: rho = 0.88353 -> linear decay (theorem 1)
-    assert np.isclose(data.spectral_radius(), 0.88353, atol=1e-5)
+    # stage-1 screenshot matrix (authoritative): rho = 0.88856 -> linear decay
+    assert np.isclose(data.spectral_radius(), 0.88856, atol=1e-4)
     assert data.classify()["regime"] == "decay"
+    # the theory doc §6 annotation 0.88353 does NOT match the matrix;
+    # it is preserved in the JSON only for cross-reference
+    assert not np.isclose(data.spectral_radius(), 0.88353, atol=1e-4)
 
 
 def test_four_node_kill_energy_matches_documented_rho():
@@ -27,18 +30,18 @@ def test_four_node_kill_energy_matches_documented_rho():
     assert "不能单独推出实战无限循环" in result["conclusion"]
 
 
-def test_four_node_perron_vector_matches_documented_alpha():
+def test_four_node_perron_vector_matches_screenshot():
     import json
     data = json.loads((EXAMPLES / "four_node_model_N5.json").read_text(encoding="utf-8"))
     model = load_transfer_matrix(EXAMPLES / "four_node_model_N5.json")
     _, vec, info = model.dominant_pair()
     assert info["positive"]
     documented = np.array(data["documented_perron"])
-    # the returned vector is sum-1 normalized; the documented alpha is the
-    # raw Perron vector, so compare ratios (proportionality)
+    # the returned vector is sum-1 normalized; the documented vector is the
+    # raw 3-decimal Perron vector from the screenshot, so compare ratios
     documented = documented / documented[np.argmax(np.abs(documented))]
     vec = vec / vec[np.argmax(np.abs(vec))]
-    assert np.allclose(vec, documented, rtol=1e-3)
+    assert np.allclose(vec, documented, atol=0.004)
 
 
 def test_seven_node_family_matches_documented_rhos():
