@@ -45,6 +45,7 @@ x_(t+1) = x_t A
 ## 快速开始
 
 ```bash
+python -m src examples/himeko_nova_cycle_demo.json
 python main.py examples/himeko_nova_cycle_demo.json
 python main.py examples/theory_document/four_node_model_N5.json
 python main.py examples/theory_document/four_node_model_N5.json --sensitivity --repair
@@ -138,7 +139,6 @@ src/
                断轴分类（cycle_detector）、一键报告（report）、
                八步审计（audit）、扰动测试（robustness）
   simulation/  离散时序引擎（timed_engine, speed_engine, priority）
-  battle/      行动值/战斗状态（legacy 骨架）
   data_loader/ 角色与矩阵示例加载（含角色 schema 校验）
   cli.py       命令行入口
 examples/      示例（含 theory_document/ 文档案例复现与队伍模拟）
@@ -151,6 +151,9 @@ docs/          架构、理论映射文档与示例图
 ## 开发
 
 Python >= 3.10，依赖见 `requirements.txt`（numpy / scipy / matplotlib / pandas）。
+
+推荐使用 `python -m src <示例>` 作为统一入口；`python main.py` 和
+`python run.py` 继续保留为兼容入口。
 
 ```bash
 python -m pytest tests/ -q

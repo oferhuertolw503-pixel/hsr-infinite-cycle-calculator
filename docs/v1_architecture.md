@@ -29,22 +29,26 @@ Character Data / Matrix Examples (JSON)
 | `src/simulation/` | 时序引擎（timed_engine）、速度驱动引擎（speed_engine） |
 | `src/data_loader/` | 角色与矩阵示例加载、矩阵库加载（source/family_key/perturbation 引用） |
 
-## 遗留骨架（未接入活跃管线）
+## 代码边界
 
-`src/battle/` 与 `src/simulator/` 是早期骨架实现，未在任何代码中引用；
-`src/core/` 的部分概念已并入 `src/simulation/`。新开发应基于
-`src/simulation/` 与 `src/matrix/`。
+早期未接入管线的 `src/battle/`、`src/simulator/`、`src/core/` 和
+`src/team/` 骨架已移除。新开发基于 `src/simulation/`、`src/matrix/`、
+`src/analyzer/` 与 `src/data_loader/`，避免维护两套相同概念。
 
 ## 优化目标
 
 矩阵层（已实现）：`CycleRepairPlanner` 搜索达到目标谱半径的最小单边干预，
 `critical_parameter` 定位临界目标数 N——回答 §8 的定位问题。
-模拟器层（待做）：搜索队伍并最大化稳定性，约束包括：
+模拟器层（已实现基础搜索）：`TeamSearch` 枚举队伍与动作优先级，并按
+稳定性排序。当前约束包括：
 
 - 能量约束（上限、阈值开大）
 - 技能点约束（上限、消耗/回复）
 - 行动值约束（AV = 10000 / 速度）
 - 触发条件（追加攻击、插入行动不消耗通常回合）
 - 敌方行动约束（闭环须在敌方行动前完成）
+
+该搜索仍是演示量级模型，结果只对当前角色数据、敌方速度和轮数预算有效，
+不应直接外推为游戏配队结论。
 
 矩阵模型提供理论分析，模拟器验证实际离散执行。
