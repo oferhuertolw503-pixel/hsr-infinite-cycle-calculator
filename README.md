@@ -4,6 +4,20 @@
 
 开发依据：《崩铁永动机的矩阵理论.md》——资源转移矩阵的谱半径决定线性长期趋势；实战"永动"还须满足上限、阈值、时序与敌方行动四类约束。理论到代码的逐节映射见 [docs/theory_implementation_map.md](docs/theory_implementation_map.md)；端到端案例（`样例/` 截图的完整建模与核验）见 [docs/case_study_yangli.md](docs/case_study_yangli.md)。
 
+## V1：初学者入口
+
+V1 只回答一个问题：**四张案例图里的矩阵和结果能否被诚实地复算？**
+
+```bash
+pip install -r requirements.txt
+python -m src.v1
+```
+
+预期最后一行是 `结论: V1 验收通过`。七节点原图存在一处内部不一致：
+矩阵显示 `T→C_U=1/4`，结果表需要 `1/2` 才能复现。V1 分别保存逐格
+转录版和结果表校准版，不把两者混成同一份数据。角色资料来源与当前数据
+边界见 [docs/v1_character_sources.md](docs/v1_character_sources.md)。
+
 ## 项目目标
 
 将游戏中的资源循环机制抽象为可计算系统：
@@ -45,49 +59,18 @@ x_(t+1) = x_t A
 ## 快速开始
 
 ```bash
-python -m src examples/himeko_nova_cycle_demo.json
-python main.py examples/himeko_nova_cycle_demo.json
-python main.py examples/theory_document/four_node_model_N5.json
-python main.py examples/theory_document/four_node_model_N5.json --sensitivity --repair
-python main.py examples/theory_document/four_node_kill_energy.json --audit
-python main.py examples/theory_document/seven_node_family.json --family
-python main.py examples/theory_document/version_matrix_library.json --library
-python main.py examples/theory_document/seven_node_real_family.json --family
-python main.py examples/theory_document/four_node_kill_real_family.json --family
-python main.py examples/theory_document/audit_workflow_demo.json --audit
-python main.py examples/theory_document/audit_workflow_demo.json --report
-python main.py examples/team_simulation_demo.json --team
-python main.py examples/team_search_demo.json --search
+python -m src.v1
+python -m src examples/theory_document/four_node_model_N5.json
+python -m src examples/theory_document/four_node_kill_real_family.json --family
+python -m src examples/theory_document/seven_node_real_family.json --family
+python -m src examples/theory_document/seven_node_table_calibrated_family.json --family
 ```
 
-`examples/theory_document/` 下的示例复现理论文档 §6 的谱半径数值
-（阶段一截图矩阵 0.88856、击杀回能 1.02442、七节点 N=2..5 的
-1.00522..1.04432）。注意：文档 §6 对阶段一标注 0.88353，与截图矩阵
-计算值 0.88856 不符，**以截图为准**（见 `docs/case_study_yangli.md` §4）。
-`audit_workflow_demo.json --audit` 跑通 §7 八步审计全流程：N=2 时去掉
-缇宝大招自充能或 C→H_U 回流减半，谱半径即翻转为衰减（rho<1）；目标数
-升到 N=5 后保持稳健——演示"哪条边决定成败"。
-`four_node_model_N5.json --sensitivity --repair` 演示 §4/§8 定位与修复：
-解析弹性 `d rho/d a_ij = u_i v_j` 与数值差分一致（误差 ~1e-7），
-决定性边是 C→H_U（弹性最大），最脆弱边与最小修复落在 H_U 自循环
-（系数 x1.30、增加 0.18 即达临界 rho=1）。`--family` 输出附临界目标数 N
-（"目标数从哪里进入系统"，§8）。
-`version_matrix_library.json --library` 演示 §7 步骤 8 版本数据管理：
-九个变体（四节点/七节点 × 不同来源、敌方机制与目标数）经 `source` 引用
-既有示例文件（可再生、不复制数值），对比表给出各上下文的 rho/regime；
-regime 不一致时明确警告"结论上下文绑定，禁止外推"，多粒度时提示
-rho 不可跨粒度排名。`--report` 输出谱半径+Perron+瓶颈+时序断轴分类
-的一键完整报告。
-
-**截图实测矩阵**（`样例/` 截图逐边转录，数值全部对齐后才入库）：
-`four_node_model_N5.json` 为阶段一截图矩阵（H/H_U/C/M，rho=0.88856，
-Perron 向量 (0.207,0.542,0.091,0.161)，歧义单元格 H_U→M 读 1/5）；
-`seven_node_real_family.json` 复现截图特征值 N=2..5 = 1.00522/1.01872/
-1.03174/1.04432 与 N=5 特征向量；`four_node_kill_real_family.json` 复现
-rho=1.02442 与文档 §4 的 α——且给出真实临界目标数：N=3 时 0.99683<1
-仍衰减，N=4 时 1.01088 首次越过 1（§8）。实测变体已入版本矩阵库
-（provenance="实测"）。文档 §6 对阶段一标注的 0.88353 与截图矩阵不符，
-保留在 JSON 的 `documented_rho_doc` 字段仅作对照。
+四节点衰减图在 N=5 得 `rho=0.88353`；加入击杀回能后得
+`rho=1.02442`，同一公式下临界目标数为 N=4。七节点逐格转录版得到
+`rho(N=2..5)=1.00127..1.04087`；结果表校准版得到图中报告的
+`1.00522..1.04432`。完整的逐图证据见
+[docs/case_study_yangli.md](docs/case_study_yangli.md)。
 
 示例图（`docs/figures/`）：四节点转移矩阵热力图/有向图、七节点族 rho 曲线。
 
@@ -101,19 +84,19 @@ rho=1.02442 与文档 §4 的 α——且给出真实临界目标数：N=3 时 0
 - [x] 矩阵族（N 依赖）与封顶系统
 - [x] 矩阵可视化（heatmap / 有向图 / rho 曲线，matplotlib）
 
-### Phase 2: Battle Simulator ✅（引擎层）
+### Phase 2: Battle Simulator ⚠️（原型层，非 V1 结论）
 
 - [x] 行动值系统（AV = 10000 / 速度，`SpeedBattleEngine`）
 - [x] 能量系统接入角色数据（上限、阈值开大）
 - [x] 技能点系统接入角色数据（上限、消耗/回复）
 - [x] 追加攻击与插入行动（不消耗通常回合）
 - [x] 敌方行动约束（行动值时钟，闭环须在敌方行动前完成）
-- [x] 完整技能/光锥/命座数据表与优先级编辑器（schema v2：
+- [x] 演示级技能/光锥/命座数据表与优先级编辑器（schema v2：
       `data/characters/*.json` + `docs/character_data_schema.md`；
       `PriorityEditor`/`priority_overrides` 运行时与队伍级编辑，
       CLI `--team` 一键模拟 + §8 断轴判定）
 
-### Phase 3: Optimization（矩阵层）✅
+### Phase 3: Optimization（实验功能，V1 后续）
 
 - [x] 参数敏感性分析（`--sensitivity`：解析弹性 `d rho/d a_ij = u_i v_j`、
       数值差分交叉验证、脆弱边/潜在新边排序；主导根非单实根时自动退化数值）
@@ -159,4 +142,5 @@ Python >= 3.10，依赖见 `requirements.txt`（numpy / matplotlib）。
 ```bash
 python -m pytest tests/ -q
 python tools/generate_theory_examples.py   # 重新生成文档案例（可复现）
+python -m tools.generate_figures           # 从 V1 数据重新生成示意图
 ```

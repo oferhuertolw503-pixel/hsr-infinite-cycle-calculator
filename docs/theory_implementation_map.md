@@ -27,7 +27,7 @@
 | §5.2 | 阈值/目标数：`A=A(x_t,N,s_t)` | `src/matrix/family.py` `MatrixFamily`；N 进入 T_U 相关转移的七节点族 | `tests/test_theory_examples.py`、`test_family` 相关 |
 | §5.3 | 时序：`Executable(e_k)⟺x_k≥cost ∧ condition` | `src/simulation/timed_engine.py` `TimedBattleEngine`；速度驱动引擎 `src/simulation/speed_engine.py` | `tests/test_timed_engine.py`、`tests/test_speed_engine.py` |
 | §5.4 | 敌方时钟 `q_t`、插队/额外回合不推进 | `TimedBattleEngine`（`enemy_av`、`no_advance`）；`SpeedBattleEngine` 的敌方行动值 | `test_enemy_clock_*`、`test_inserted_actions_*`、`tests/test_speed_engine.py` |
-| §6 | 案例数值：0.88856（阶段一截图矩阵）/ 1.02442 / 1.00522..1.04432 | `examples/theory_document/*.json`：阶段一截图矩阵 `four_node_model_N5.json`（rho=0.88856；文档 §6 标注 0.88353 与之不符,以截图为准,标注值存于 `documented_rho_doc`）；**实测矩阵** `seven_node_real_family.json`、`four_node_kill_real_family.json`（截图转录,数值全对齐） | `tests/test_theory_examples.py` |
+| §6 | 四图案例复算：0.88353 / 1.02442 / 七节点显示矩阵与结果表差异 | `four_node_model_N5.json`、`four_node_kill_real_family.json`、`seven_node_real_family.json`、`seven_node_table_calibrated_family.json` | `tests/test_theory_examples.py`、`tests/test_v1.py` |
 | §7 | 八步复核流程 | `src/analyzer/audit.py` `CycleAudit`；全流程示例 `examples/theory_document/audit_workflow_demo.json` | `tests/test_audit.py`、`tests/test_audit_demo.py` |
 | §7 步骤 7 | 扰动测试（N/未击杀/治疗缺失/插队） | `src/analyzer/robustness.py` | `tests/test_robustness.py` |
 | §7 步骤 8 | 版本数据管理：不同版本/模式/祝福/敌方机制的 A 矩阵库 | `src/matrix/library.py` `MatrixLibrary`/`MatrixVariant` + `load_matrix_library`（`source`/`family_key`/`perturbation` 引用,可再生）；CLI `--library`；演示 `examples/theory_document/version_matrix_library.json` | `tests/test_matrix_library.py` |
@@ -41,46 +41,19 @@
 | §5.3（数据层） | 优先级/可执行性编辑:排轴可配置并持久化 | 角色数据 schema v2（`data/characters/`、`docs/character_data_schema.md`、`validate_character`）+ `ActionSpec.priority/enabled` + `PriorityEditor`/`priority_overrides`；CLI `--team` | `tests/test_character_schema.py`、`tests/test_priority.py` |
 | 可视化 | Phase 1 矩阵可视化 | `src/matrix/visualization.py`（heatmap / 有向图 / rho 曲线） | `tests/test_visualization.py`；示例图见 `docs/figures/` |
 
-## 关键数值复现
+## V1 四图复现
 
-在仓库根目录运行 `python main.py <示例>` 可复现文档 §6 数值：
+运行 `python -m src.v1` 验收四张图片：
 
-| 示例 | 谱半径（计算） | 文档 §6 |
+| 数据 | 计算结果 | 证据状态 |
 |---|---|---|
-| `four_node_model_N5.json` | 0.88856 | 阶段一截图矩阵（文档 §6 标注 0.88353 与之不符,以截图为准） |
-| `four_node_kill_energy.json` | 1.02442 | 调整转移并加入击杀回能 |
-| `seven_node_family.json --family` | 1.00522 / 1.01825 / 1.03129 / 1.04432 (N=2..5) | 七节点模型 N=2..5 |
+| 四节点无击杀回能 N=5 | 0.88353 | 显示矩阵与截图结果一致 |
+| 四节点击杀回能 N=5 | 1.02442 | 显示矩阵、结果和特征向量一致 |
+| 七节点逐格转录 N=2..5 | 1.00127..1.04087 | 保留图示 T→C_U=1/4 |
+| 七节点结果表校准 N=2..5 | 1.00522..1.04432 | T→C_U 必须改为 1/2，不能称为逐格转录 |
 
-> 注意：文档 §6 只记录了谱半径，未给出原矩阵。阶段一截图矩阵已恢复
-> （见 `docs/case_study_yangli.md` §4）；文档标注值 0.88353 与截图矩阵
-> 不符，以截图为准。
-
-## 截图实测矩阵（样例/ 目录，2026-08-22）
-
-用户提供的三张有效截图已逐边转录并通过 `tools/generate_theory_examples.py` 生成**实测**示例（全部数值对齐截图后才入库）：
-
-| 示例 | 对齐校验 | 结论 |
-|---|---|---|
-| `four_node_model_N5.json` | rho=0.88856（截图矩阵计算值）+ Perron 向量 (0.207,0.542,0.091,0.161)；H_U→M 读 1/5（读 1/4 得 0.89640） | 阶段一截图矩阵（H/H_U/C/M）已恢复；文档 §6 标注 0.88353 与之不符,以截图为准 |
-| `seven_node_real_family.json --family` | 特征值 N=2..5 = 1.00522/1.01872/1.03174/1.04432（5 位小数全对齐）+ N=5 特征向量 (0.28,0.61,0.19,0.51,0.20,0.27,0.37) | 截图原七节点矩阵；N 只进入 T_U 行（(4.5N+5)/97.5、6N/97.5、1.5N/97.5），§5.2 的直接实证 |
-| `four_node_kill_real_family.json --family` | rho(N=5)=1.02442 + 特征向量 α=(0.304637,0.832597,0.202899,0.415706)（文档 §4 的 α 即源于此） | 截图姬子+缇宝四节点矩阵；N=2..4 为实测矩阵计算值：**N=3 时 0.99683<1 仍衰减，N=4 时 1.01088 首次越过 1** —— 真实数据的临界目标数（§8，`critical_parameter` 返回 N=4） |
-
-转录校验说明：
-
-- 七节点截图 T→C_U 单元格**显示**为 1/4，但只有取 1/2 才能同时复现全部四个特征值与特征向量；按 1/2 记录并在示例 `provenance` 中注明。
-- 阶段一截图矩阵（截图 002440）已恢复：由截图 Perron 向量与 rho=0.88856 反解（见 `docs/case_study_yangli.md` §4），歧义单元格锁定 H_U→M（1/5 vs 1/4）；文档 §6 标注值 0.88353 与截图矩阵不符，以截图为准。
-- 截图 002449 中社区的"可无限循环"表述即文档 §6 修正的对象：rho>1 只是线性增长方向。
-- 实测变体已加入 `version_matrix_library.json`（provenance="实测..."），`--library` 可对比重构与实测结论。
-
-## 案例研究（样例截图 → 一个连贯案例）
-
-`样例/` 四张截图是同一案例的三阶段建模过程，完整分析与复现命令见
-[docs/case_study_yangli.md](case_study_yangli.md)（截图已归档
-`docs/screenshots/case_*.png`）：四节点初版衰减族（截图矩阵已恢复，
-rho=0.88856，以截图为准）→ 四节点击杀回能（转录实测，临界目标数 N=4）
-→ 七节点完整模型
-（转录实测，N 只进入 T_U 行）。案例的"可无限循环"表述经 §6 修正，
-关键边定位在 H_U→H_U、断粮候选在 T。
+四图的逐项说明见 [case_study_yangli.md](case_study_yangli.md)。V1 将原图
+内部不一致作为验收结果显式报告；不会通过修改截图值来伪装成完全一致。
 
 ## 瓶颈定位与修复规划（§4/§8）
 
