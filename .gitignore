@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.pip-tmp/
+pytest-cache-*/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Raw screenshot uploads (样例/): archived byte-identical under docs/screenshots/
+样例/
+
+# Editors
+.idea/
+.vscode/
