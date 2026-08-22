@@ -2,7 +2,7 @@
   "name": "版本/模式矩阵库演示 (§7 步骤 8)",
   "source": "theory_document",
   "section": "7",
-  "notes": "演示'不同版本、模式、祝福和敌方机制对应不同 A':四节点组内,敌方是否持续刷新击杀决定 decay/growth;七节点组内,目标数与击杀是否持续同样改变结论。第 2-5 个变体经 source 引用重构/审计示例文件(可再生);第 1、6-9 个为截图实测矩阵(样例/ 目录,特征值/特征向量与截图全部对齐),其中阶段一截图矩阵 rho=0.88856(文档 §6 标注 0.88353 与之不符,以截图为准),实测击杀回能族给出真实临界目标数 N=4(N=3 时 rho=0.99683<1)。条目与来源以各变体 provenance 为准。",
+  "notes": "V1 同时保存截图逐格转录和结果表校准版。四节点衰减/击杀回能图可由显示矩阵直接复现;七节点图的 T->C_U 显示 1/4,但结果表要求 1/2,因此两个版本必须分开。条目与来源以各变体 provenance 为准。",
   "variants": [
     {
       "name": "四节点·截图矩阵 (N=5)",
@@ -10,7 +10,7 @@
       "version": "截图案例一",
       "mode": "多目标环境",
       "enemy": "5 目标,击杀不回能",
-      "provenance": "实测(截图矩阵;rho=0.88856 与截图一致;文档 §6 标注 0.88353 与之不符,以截图为准)"
+      "provenance": "逐格转录 case_4node_decay.png;rho=0.88353 与截图一致"
     },
     {
       "name": "四节点·加入击杀回能 (N=5)",
@@ -47,22 +47,40 @@
       "provenance": "重构演示值(审计演示扰动用例)"
     },
     {
-      "name": "七节点·实测矩阵 (N=2)",
-      "source": "seven_node_real_family.json",
+      "name": "七节点·结果表校准 (N=2)",
+      "source": "seven_node_table_calibrated_family.json",
       "family_key": "2",
       "version": "文档 §6 七节点模型",
       "mode": "多目标环境",
       "enemy": "2 目标,击杀持续刷新",
-      "provenance": "实测(截图矩阵;特征值 N=2..5 与 N=5 特征向量全部对齐)"
+      "provenance": "表格校准:将图示 T->C_U=1/4 改为 1/2,复现特征值表"
     },
     {
-      "name": "七节点·实测矩阵 (N=5)",
-      "source": "seven_node_real_family.json",
+      "name": "七节点·结果表校准 (N=5)",
+      "source": "seven_node_table_calibrated_family.json",
       "family_key": "5",
       "version": "文档 §6 七节点模型",
       "mode": "多目标环境",
       "enemy": "5 目标,击杀持续刷新",
-      "provenance": "实测(截图矩阵;特征值 N=2..5 与 N=5 特征向量全部对齐)"
+      "provenance": "表格校准:将图示 T->C_U=1/4 改为 1/2,复现特征值表"
+    },
+    {
+      "name": "七节点·截图显示矩阵 (N=2)",
+      "source": "seven_node_real_family.json",
+      "family_key": "2",
+      "version": "截图逐格转录",
+      "mode": "多目标环境",
+      "enemy": "2 目标",
+      "provenance": "逐格转录:T->C_U=1/4;rho=1.00127,与截图结果表不一致"
+    },
+    {
+      "name": "七节点·截图显示矩阵 (N=5)",
+      "source": "seven_node_real_family.json",
+      "family_key": "5",
+      "version": "截图逐格转录",
+      "mode": "多目标环境",
+      "enemy": "5 目标",
+      "provenance": "逐格转录:T->C_U=1/4;rho=1.04087,与截图结果表不一致"
     },
     {
       "name": "四节点(姬子+缇宝)·实测击杀回能 (N=3)",

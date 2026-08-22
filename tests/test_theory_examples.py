@@ -11,13 +11,11 @@ EXAMPLES = Path(__file__).resolve().parent.parent / "examples" / "theory_documen
 
 
 def test_four_node_model_n5_matches_documented_rho():
-    data = load_transfer_matrix(EXAMPLES / "four_node_model_N5.json")
-    # stage-1 screenshot matrix (authoritative): rho = 0.88856 -> linear decay
-    assert np.isclose(data.spectral_radius(), 0.88856, atol=1e-4)
-    assert data.classify()["regime"] == "decay"
-    # the theory doc §6 annotation 0.88353 does NOT match the matrix;
-    # it is preserved in the JSON only for cross-reference
-    assert not np.isclose(data.spectral_radius(), 0.88353, atol=1e-4)
+    model = load_transfer_matrix(EXAMPLES / "four_node_model_N5.json")
+    # case_4node_decay.png: displayed matrix and printed rho agree.
+    assert model.node_names == ["H", "H_U", "T", "T_U"]
+    assert np.isclose(model.spectral_radius(), 0.88353, atol=1e-5)
+    assert model.classify()["regime"] == "decay"
 
 
 def test_four_node_kill_energy_matches_documented_rho():
@@ -30,18 +28,24 @@ def test_four_node_kill_energy_matches_documented_rho():
     assert "不能单独推出实战无限循环" in result["conclusion"]
 
 
-def test_four_node_perron_vector_matches_screenshot():
-    import json
-    data = json.loads((EXAMPLES / "four_node_model_N5.json").read_text(encoding="utf-8"))
+def test_four_node_decay_matrix_matches_screenshot_cells():
     model = load_transfer_matrix(EXAMPLES / "four_node_model_N5.json")
-    _, vec, info = model.dominant_pair()
-    assert info["positive"]
-    documented = np.array(data["documented_perron"])
-    # the returned vector is sum-1 normalized; the documented vector is the
-    # raw 3-decimal Perron vector from the screenshot, so compare ratios
-    documented = documented / documented[np.argmax(np.abs(documented))]
-    vec = vec / vec[np.argmax(np.abs(vec))]
-    assert np.allclose(vec, documented, atol=0.004)
+    expected = np.array([
+        [0, 1 / 4, 0, 1 / 4],
+        [3 / 5, 3 / 5, 0, 0],
+        [0, 0, 0, 1 / 2],
+        [(4.5 * 5 + 5) / 97.5, 6 * 5 / 97.5, 30 / 97.5, 5 / 97.5],
+    ])
+    assert np.allclose(model.A, expected)
+
+
+def test_four_node_decay_family_uses_same_screenshot_formula():
+    family = load_family(EXAMPLES / "four_node_decay_real_family.json")
+    assert np.allclose(
+        family.models["5"].A,
+        load_transfer_matrix(EXAMPLES / "four_node_model_N5.json").A,
+    )
+    assert family.analyze()[-1]["matches_target"]
 
 
 def test_seven_node_family_matches_documented_rhos():
@@ -79,23 +83,37 @@ def test_loader_rejects_non_family_file():
 
 # -- real matrices transcribed from the source screenshots ----------------
 
-def test_seven_node_real_family_matches_screenshot_eigenvalues():
+def test_seven_node_screenshot_matrix_preserves_displayed_one_quarter():
     family = load_family(EXAMPLES / "seven_node_real_family.json")
     rows = {row["key"]: row for row in family.analyze()}
-    # screenshot eigenvalue table, exact to 5 decimals
+    assert family.models["5"].A[5, 4] == pytest.approx(1 / 4)
+    displayed_rhos = {
+        "2": 1.00126839,
+        "3": 1.01495058,
+        "4": 1.02813290,
+        "5": 1.04086906,
+    }
+    for key, expected in displayed_rhos.items():
+        assert np.isclose(rows[key]["rho"], expected, atol=1e-7), key
+        assert rows[key]["matches_target"] is False, key
+        assert rows[key]["irreducible"], key
+
+
+def test_seven_node_table_calibrated_family_matches_reported_results():
+    import json
+    data = json.loads(
+        (EXAMPLES / "seven_node_table_calibrated_family.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    family = load_family(EXAMPLES / "seven_node_table_calibrated_family.json")
+    rows = {row["key"]: row for row in family.analyze()}
     for key, target in {"2": 1.00522, "3": 1.01872, "4": 1.03174,
                         "5": 1.04432}.items():
         assert np.isclose(rows[key]["rho"], target, atol=1e-5), key
         assert rows[key]["matches_target"], key
-        assert rows[key]["irreducible"], key
-
-
-def test_seven_node_real_family_eigenvector_matches_screenshot():
-    import json
-    data = json.loads(
-        (EXAMPLES / "seven_node_real_family.json").read_text(encoding="utf-8")
-    )
-    model = load_family(EXAMPLES / "seven_node_real_family.json").models["5"]
+    model = family.models["5"]
+    assert model.A[5, 4] == pytest.approx(1 / 2)
     _, vec, info = model.dominant_pair()
     assert info["positive"]
     documented = np.array(data["documented_perron_N5"])

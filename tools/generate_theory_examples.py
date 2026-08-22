@@ -4,15 +4,13 @@ The theory document (section 6) records spectral radii for three model
 families but not the raw matrices.  These generators construct matrices
 whose rho matches the documented values:
 
-  * four_node_model_N5.json     rho = 0.88856  (stage-1 screenshot matrix)
+  * four_node_model_N5.json     rho = 0.88353  (stage-1 screenshot matrix)
   * four_node_kill_energy.json  rho = 1.02442  (adjusted + kill energy)
   * seven_node_family.json      rho(N=2..5) = 1.00522 .. 1.04432
 
-NOTE: the theory document §6 annotates stage-1 N=5 with 0.88353, but
-the stage-1 SCREENSHOT matrix computes rho = 0.88856 (see
-docs/case_study_yangli.md §4).  Per user confirmation the screenshot
-matrix is authoritative: four_node_model_N5.json now carries the
-screenshot matrix and keeps the doc annotation under documented_rho_doc.
+The screenshot matrix is authoritative.  For the seven-node case the matrix
+cells and the printed eigenvalue table disagree at one cell; V1 generates an
+exact transcription and a separately named table-calibrated variant.
 
 Run from the repository root:
 
@@ -27,8 +25,7 @@ import numpy as np
 OUT_DIR = Path(__file__).resolve().parent.parent / "examples" / "theory_document"
 
 # -- documented values -------------------------------------------------------
-RHO_N5 = 0.88353            # theory doc §6 annotation for stage-1 N=5
-RHO_SCREENSHOT_N5 = 0.88856  # stage-1 screenshot matrix computed rho (authoritative)
+RHO_N5 = 0.88353            # stage-1 screenshot matrix and displayed result, N=5
 RHO_KILL_ENERGY = 1.02442    # adjusted transfers + kill energy
 RHO_SEVEN_N2 = 1.00522       # seven-node model, N=2
 RHO_SEVEN_N5 = 1.04432       # seven-node model, N=5
@@ -78,11 +75,10 @@ def round_matrix(matrix, decimals=8):
 
 
 # -- real matrices transcribed from the source screenshots (样例/) --------
-# Verified against the numbers displayed in the screenshots:
-#   * seven-node: eigenvalues N=2..5 = 1.00522/1.01872/1.03174/1.04432
-#     (exact to 5 decimals) plus the N=5 eigenvector.  The screenshot
-#     DISPLAYS the T -> C_U entry as 1/4, but only 1/2 reproduces all
-#     documented values; recorded as 1/2 here.
+# Values printed in the screenshots.  The seven-node screenshot is internally
+# inconsistent: its displayed T -> C_U entry is 1/4, while the printed
+# eigenvalue table is reproduced only with 1/2.  Both variants are generated
+# below so the discrepancy stays visible instead of silently changing a cell.
 #   * four-node kill-energy (H/H_U/T/T_U): rho(N=5) = 1.02442 and the
 #     eigenvector alpha = (0.304637, 0.832597, 0.202899, 0.415706).
 SEVEN_REAL_RHO = {"2": 1.00522, "3": 1.01872, "4": 1.03174, "5": 1.04432}
@@ -90,17 +86,24 @@ SEVEN_REAL_EIGVEC_N5 = (0.28, 0.61, 0.19, 0.51, 0.20, 0.27, 0.37)
 ALPHA_FOUR = (0.304637, 0.832597, 0.202899, 0.415706)
 
 
-def seven_node_real(N):
-    """Seven-node transfer matrix from the screenshots, N = target count."""
+def seven_node_screenshot(N):
+    """Seven-node matrix exactly as displayed, N = target count."""
     A = np.zeros((7, 7))
     A[0] = [0, 1 / 4, 0, 0, 1 / 4, 0, 1 / 4]                    # H
     A[1] = [3 / 5, 3 / 5, 0, 1 / 5, 0, 0, 0]                    # H_U
     A[2] = [0, 0, 0, 0, 1 / 2, 0, 1 / 4]                        # C
     A[3] = [3 / 6, 3 / 6, 0.5 / 6, 0, 2 / 6, 0, 0]              # M
     A[4] = [3 / 20, 4 / 20, 5 / 20, 0, 0, 0, 0]                 # C_U
-    A[5] = [0, 0, 0, 0, 1 / 2, 0, 1 / 2]                        # T
+    A[5] = [0, 0, 0, 0, 1 / 4, 0, 1 / 2]                        # T
     A[6] = [(4.5 * N + 5) / 97.5, 6 * N / 97.5, 0, 0,           # T_U
              1.5 * N / 97.5, 30 / 97.5, 5 / 97.5]
+    return A
+
+
+def seven_node_table_calibrated(N):
+    """Displayed matrix with T -> C_U changed to 1/2 to match its table."""
+    A = seven_node_screenshot(N)
+    A[5, 4] = 1 / 2
     return A
 
 
@@ -114,26 +117,13 @@ def four_node_kill_real(N):
     return A
 
 
-def four_node_decay_screenshot():
-    """Stage-1 four-node screenshot matrix (H/H_U/C/M), N=5.
-
-    Back-solved from the screenshot's Perron vector w = (0.207, 0.542,
-    0.091, 0.161) at rho = 0.88856: rho(A*) = 0.88855 reproduces the
-    recorded 0.88856 (w is rounded to 3 decimals), and changing the
-    ambiguous cell H_U -> M from 1/5 to 1/4 raises rho to 0.89640,
-    matching the recorded alternative reading 0.89622.  The H_U row
-    [3/5, 3/5, 0, 1/5] matches the seven-node family, and the M row
-    back-solves uniquely to [1/12, 1/20, 1/5, 1/2].
-
-    The theory document §6 records 0.88353 for "第一组参数 N=5" -- an
-    annotation that does NOT match the screenshot matrix; per user
-    confirmation the screenshot matrix is authoritative.
-    """
+def four_node_decay_screenshot(N=5):
+    """Stage-1 H/H_U/T/T_U matrix exactly as displayed."""
     A = np.zeros((4, 4))
-    A[0] = [1 / 10, 1 / 5, 30 / 97.5, 1 / 6]     # H
-    A[1] = [3 / 5, 3 / 5, 0, 1 / 5]              # H_U
-    A[2] = [0, 1 / 20, 1 / 2, 5 / 97.5]          # C
-    A[3] = [1 / 12, 1 / 20, 1 / 5, 1 / 2]        # M
+    A[0] = [0, 1 / 4, 0, 1 / 4]                                  # H
+    A[1] = [3 / 5, 3 / 5, 0, 0]                                  # H_U
+    A[2] = [0, 0, 0, 1 / 2]                                      # T
+    A[3] = [(4.5 * N + 5) / 97.5, 6 * N / 97.5, 30 / 97.5, 5 / 97.5]  # T_U
     return A
 
 
@@ -167,27 +157,44 @@ def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # -- four-node stage-1 screenshot matrix, N=5 ----------------------------
-    a_n5 = four_node_decay_screenshot()
+    a_n5 = four_node_decay_screenshot(5)
     four_n5 = {
-        "name": "四节点截图矩阵 (阶段一初版, N=5)",
+        "name": "四节点截图显示矩阵 (姬子+缇宝, N=5, 无击杀回能)",
         "source": "screenshot",
         "section": "6",
-        "nodes": ["H", "H_U", "C", "M"],
+        "nodes": ["H", "H_U", "T", "T_U"],
         "matrix": round_matrix(a_n5),
-        "documented_rho": RHO_SCREENSHOT_N5,
-        "documented_rho_doc": RHO_N5,
-        "documented_perron": [0.207, 0.542, 0.091, 0.161],
-        "tolerance": 1e-4,
+        "documented_rho": RHO_N5,
+        "tolerance": 1e-5,
         "notes": (
-            "截图矩阵(用户确认以截图为准):由截图 Perron 向量 "
-            "(0.207,0.542,0.091,0.161) 与 rho=0.88856 反解恢复,"
-            "rho(A*)=0.88855;歧义单元格 H_U->M 读 1/5(读 1/4 得 0.89640)。"
-            "文档 §6 标注 0.88353 与该矩阵不符,保留于 documented_rho_doc "
-            "供对照;以截图矩阵为准。条目为反解恢复值,分数形式待原图核对。"
+            "逐格转录 docs/screenshots/case_4node_decay.png:节点为 H/H_U/T/T_U,"
+            "H_U 自循环为 3/5,无击杀回能;N=5 时 rho=0.88353,与截图结论一致。"
         ),
     }
     (OUT_DIR / "four_node_model_N5.json").write_text(
         json.dumps(four_n5, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    four_decay_real = {
+        "name": "四节点截图显示矩阵族 (姬子+缇宝, 无击杀回能)",
+        "source": "screenshot",
+        "section": "6",
+        "nodes": ["H", "H_U", "T", "T_U"],
+        "parameter": "N",
+        "matrices_by_N": {
+            str(N): round_matrix(four_node_decay_screenshot(N))
+            for N in (2, 3, 4, 5)
+        },
+        "rho_target_by_N": {"5": RHO_N5},
+        "tolerance": 1e-5,
+        "notes": (
+            "case_4node_decay.png 的显示矩阵;截图只报告 N=5 的 rho=0.88353,"
+            "N=2..4 为同一显示公式的计算值。"
+        ),
+    }
+    (OUT_DIR / "four_node_decay_real_family.json").write_text(
+        json.dumps(four_decay_real, ensure_ascii=False, indent=2),
+        encoding="utf-8",
     )
 
     # -- four-node model with kill energy --------------------------------------
@@ -234,34 +241,64 @@ def main():
         json.dumps(seven, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
-    # -- seven-node REAL matrix family (from the screenshots) --------------
+    # -- seven-node matrix exactly as displayed in the screenshots ---------
     seven_real = {
-        "name": "七节点实测模型 (截图矩阵, N=2..5)",
+        "name": "七节点截图显示矩阵 (N=2..5)",
         "source": "screenshot",
         "section": "2.1, 5.2, 6",
         "provenance": (
-            "实测:截图矩阵逐边转录;特征值 N=2..5 与截图表 1.00522/1.01872/"
-            "1.03174/1.04432 全部对齐(5 位小数),N=5 特征向量对齐。"
-            "注意:截图 T->C_U 显示为 1/4,但只有 1/2 能复现全部截图数值,"
-            "此处按 1/2 记录。"
+            "逐格转录 case_7node_matrix.png 与 case_matrix_definition.png;"
+            "T->C_U 保留截图显示值 1/4。该显示矩阵不能复现同图下方的"
+            "特征值表,这是原图内部不一致,不是计算误差。"
         ),
         "nodes": SEVEN_NODES,
         "parameter": "N",
         "matrices_by_N": {
-            str(N): round_matrix(seven_node_real(N)) for N in (2, 3, 4, 5)
+            str(N): round_matrix(seven_node_screenshot(N)) for N in (2, 3, 4, 5)
+        },
+        "rho_target_by_N": dict(SEVEN_REAL_RHO),
+        "computed_rho_by_N": {
+            str(N): spectral_radius(seven_node_screenshot(N))
+            for N in (2, 3, 4, 5)
+        },
+        "documented_perron_N5": list(SEVEN_REAL_EIGVEC_N5),
+        "tolerance": 1e-5,
+        "notes": (
+            "截图显示矩阵(非重构):N 只进入 T_U 行。按显示的 T->C_U=1/4,"
+            "rho(N=2..5)=1.00127/1.01495/1.02813/1.04087,与图中结果表"
+            "1.00522/1.01872/1.03174/1.04432 不一致。"
+        ),
+    }
+    (OUT_DIR / "seven_node_real_family.json").write_text(
+        json.dumps(seven_real, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    # -- one-cell calibrated variant that reproduces the printed table -----
+    seven_calibrated = {
+        "name": "七节点截图结果表校准模型 (T->C_U=1/2)",
+        "source": "screenshot_table_calibration",
+        "section": "2.1, 5.2, 6",
+        "provenance": (
+            "从截图显示矩阵出发,仅将 T->C_U 从图示 1/4 改为 1/2;"
+            "由此复现图中 N=2..5 特征值表与 N=5 特征向量。"
+        ),
+        "nodes": SEVEN_NODES,
+        "parameter": "N",
+        "matrices_by_N": {
+            str(N): round_matrix(seven_node_table_calibrated(N))
+            for N in (2, 3, 4, 5)
         },
         "rho_target_by_N": dict(SEVEN_REAL_RHO),
         "documented_perron_N5": list(SEVEN_REAL_EIGVEC_N5),
         "tolerance": 1e-5,
         "notes": (
-            "截图原矩阵(非重构):H/H_U/C/M/C_U/T/T_U 七节点;N 只进入 T_U 行"
-            "((4.5N+5)/97.5、6N/97.5、1.5N/97.5),体现 §5.2 目标数进入矩阵条目。"
-            "截图来源:docs/screenshots/case_7node_matrix.png、"
-            "case_matrix_definition.png(原件在 样例/)。"
+            "校准版用于复现 case_7node_matrix.png 下方结果表;不是逐格转录版。"
+            "V1 同时保留 seven_node_real_family.json 作为截图显示矩阵。"
         ),
     }
-    (OUT_DIR / "seven_node_real_family.json").write_text(
-        json.dumps(seven_real, ensure_ascii=False, indent=2),
+    (OUT_DIR / "seven_node_table_calibrated_family.json").write_text(
+        json.dumps(seven_calibrated, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 

@@ -35,11 +35,10 @@ def test_elasticity_matches_finite_differences():
 
 
 def test_decisive_edge_maximizes_perron_product():
-    # The screenshot matrix is not symmetric, so u != v; the decisive
-    # edge is C -> H_U (largest u_i * v_j product / u^T v).
+    # The exact screenshot matrix makes the H_U self-loop decisive.
     analysis = BottleneckAnalyzer(_four_node()).analyze()
     top = analysis["decisive_edges"][0]
-    assert (top["from"], top["to"]) == ("C", "H_U")
+    assert (top["from"], top["to"]) == ("H_U", "H_U")
     elasticities = [row["d_rho"] for row in analysis["decisive_edges"]]
     assert top["d_rho"] == max(elasticities)
 
@@ -47,10 +46,8 @@ def test_decisive_edge_maximizes_perron_product():
 def test_scarce_node_is_smallest_perron_frequency():
     analysis = BottleneckAnalyzer(_four_node()).analyze()
     scarce = analysis["scarce_node"]
-    assert scarce["node"] == "C"
-    # Screenshot Perron vector (0.207, 0.542, 0.091, 0.161) normalized
-    # to sum 1 gives C the smallest share ~0.0909.
-    assert np.isclose(scarce["frequency"], 0.090905, atol=1e-4)
+    assert scarce["node"] == "T"
+    assert np.isclose(scarce["frequency"], 0.150365, atol=1e-4)
 
 
 def test_fragile_edges_report_removal_impact():
@@ -60,9 +57,9 @@ def test_fragile_edges_report_removal_impact():
         assert row["load_bearing"] is True
         assert row["drop_rho"] < rho
         assert np.isclose(row["drop_delta"], row["drop_rho"] - rho)
-    # Removing the H_U self-loop drops rho the most (0.8886 -> 0.7124).
+    # Removing H_U -> H drops rho the most in the displayed matrix.
     fragile_top = analysis["fragile_edges"][0]
-    assert (fragile_top["from"], fragile_top["to"]) == ("H_U", "H_U")
+    assert (fragile_top["from"], fragile_top["to"]) == ("H_U", "H")
 
 
 def test_audit_demo_missed_kill_edge_is_load_bearing():

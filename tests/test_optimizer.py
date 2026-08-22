@@ -38,9 +38,7 @@ def test_minimal_boosts_reach_target_exactly():
 
 def test_best_repair_on_most_fragile_self_loop():
     # First-order: the needed boost is (1 - rho) / (u_i v_j a_ij).  The
-    # cheapest single intervention lands on the H_U self-loop (the most
-    # fragile edge, section 4/8), not necessarily on the highest-elasticity
-    # edge (C -> H_U) once nonlinearity is accounted for.
+    # cheapest single intervention lands on the high-elasticity H_U self-loop.
     plan = CycleRepairPlanner(_four_node()).plan(target_rho=1.0)
     best = plan["best"]
     assert (best["from"], best["to"]) == ("H_U", "H_U")

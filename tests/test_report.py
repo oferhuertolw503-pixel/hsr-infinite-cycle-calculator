@@ -45,7 +45,7 @@ def test_report_bottleneck_summary_is_trimmed():
     assert bottleneck["analytic"] is True
     assert len(bottleneck["decisive_edges"]) == 5
     assert len(bottleneck["fragile_edges"]) == 5
-    assert bottleneck["decisive_edges"][0]["from"] == "C"
+    assert bottleneck["decisive_edges"][0]["from"] == "H_U"
 
 
 def test_report_accepts_raw_matrix():
